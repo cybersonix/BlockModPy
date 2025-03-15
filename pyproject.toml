@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "blockmodpy"
+version = "0.1.0"
+description = "A Python implementation of BlockMod using QtPy."
+authors = ["cybersonix <sunhaonuaa@outlook.com>"]
+license = "BSD"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+qtpy = "^2.4.3"
+pyside2 = {version = "^5.15.2.1", python = "<3.11"}
+
+[[tool.poetry.source]]
+name = "tsinghua"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+priority = "primary"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "24.8.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
