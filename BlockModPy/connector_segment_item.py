@@ -36,9 +36,9 @@
 
 from __future__ import annotations
 
-from typing import Optional, Any
+from typing import Optional, Any, TYPE_CHECKING
 
-from qtpy.QtCore import Qt, QPoint, QLineF
+from qtpy.QtCore import Qt, QPoint, QLineF, QRectF
 from qtpy.QtGui import QPainter, QPainterPath, QColor, QPen, QBrush
 from qtpy.QtWidgets import (
     QGraphicsLineItem,
@@ -47,13 +47,14 @@ from qtpy.QtWidgets import (
     QStyleOptionGraphicsItem,
     QWidget,
     QGraphicsItem,
-    QRectF,
     QApplication,
 )
 
 from .connector import Connector
 from .globals import Globals
-from .scene_manager import SceneManager
+
+if TYPE_CHECKING:
+    from .scene_manager import SceneManager
 
 
 class ConnectorSegmentItem(QGraphicsLineItem):
@@ -90,10 +91,10 @@ class ConnectorSegmentItem(QGraphicsLineItem):
         super().setLine(line)
 
     def paint(
-        self,
-        painter: QPainter,
-        option: QStyleOptionGraphicsItem,
-        widget: Optional[QWidget] = None,
+            self,
+            painter: QPainter,
+            option: QStyleOptionGraphicsItem,
+            widget: Optional[QWidget] = None,
     ) -> None:
         """绘制线段项。
 
@@ -131,8 +132,8 @@ class ConnectorSegmentItem(QGraphicsLineItem):
 
         # Draw text if this is the central segment
         if (
-            self.m_connector.m_text
-            and self.m_segment_idx == self._calculate_central_segment_index()
+                self.m_connector.m_text
+                and self.m_segment_idx == self._calculate_central_segment_index()
         ):
             x = line.p1().x() + line.dx() / 2
             y = line.p1().y() + line.dy() / 2
@@ -162,8 +163,8 @@ class ConnectorSegmentItem(QGraphicsLineItem):
         super().hoverEnterEvent(event)
         scene_manager = self.scene()
         if (
-            isinstance(scene_manager, SceneManager)
-            and scene_manager.is_currently_connecting()
+                isinstance(scene_manager, SceneManager)
+                and scene_manager.is_currently_connecting()
         ):
             return
 
@@ -185,8 +186,8 @@ class ConnectorSegmentItem(QGraphicsLineItem):
         super().hoverLeaveEvent(event)
         scene_manager = self.scene()
         if (
-            isinstance(scene_manager, SceneManager)
-            and scene_manager.is_currently_connecting()
+                isinstance(scene_manager, SceneManager)
+                and scene_manager.is_currently_connecting()
         ):
             return
 
@@ -314,7 +315,7 @@ class ConnectorSegmentItem(QGraphicsLineItem):
 
         # Update segments to the left
         while (seg_idx := seg_idx - 1) >= 0 and (
-            not Globals.near_zero(dx) or not Globals.near_zero(dy)
+                not Globals.near_zero(dx) or not Globals.near_zero(dy)
         ):
             seg = self.m_connector.m_segments[seg_idx]
             if not Globals.near_zero(dx) and seg.m_direction == Qt.Horizontal:
@@ -353,7 +354,7 @@ class ConnectorSegmentItem(QGraphicsLineItem):
         seg_idx = self.m_segment_idx
 
         while (seg_idx := seg_idx + 1) < len(self.m_connector.m_segments) and (
-            not Globals.near_zero(dx) or not Globals.near_zero(dy)
+                not Globals.near_zero(dx) or not Globals.near_zero(dy)
         ):
             seg = self.m_connector.m_segments[seg_idx]
             if not Globals.near_zero(dx) and seg.m_direction == Qt.Horizontal:
