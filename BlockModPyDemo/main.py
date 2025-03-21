@@ -45,7 +45,7 @@ from BlockModPyDemo.dialog_demo import DialogDemo
 
 
 def q_debug_msg_handler(
-        msg_type: QtMsgType, context: QMessageLogContext, msg: str
+    msg_type: QtMsgType, context: QMessageLogContext, msg: str
 ) -> None:
     """Qt消息处理函数，将消息输出到标准输出。
 
