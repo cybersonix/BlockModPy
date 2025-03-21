@@ -36,7 +36,10 @@
 
 from __future__ import annotations
 
-from typing import List, Optional, Union
+from typing import List, Optional, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .socket_item import SocketItem
 
 from qtpy.QtCore import QPointF, QRectF, QSizeF, Qt
 from qtpy.QtGui import (
@@ -53,18 +56,18 @@ from qtpy.QtWidgets import (
     QGraphicsSceneMouseEvent,
     QStyleOptionGraphicsItem,
     QWidget,
+    QStyle,
 )
 
 from .block import Block
 from .globals import Globals
-from .socket_item import SocketItem
 
 
 class BlockItem(QGraphicsRectItem):
     """BlockItem 类，表示图形场景中的块项，负责绘制块并管理其插槽项。"""
 
     def __init__(
-        self, block: Block, parent: Optional[QGraphicsRectItem] = None
+            self, block: Block, parent: Optional[QGraphicsRectItem] = None
     ) -> None:
         """初始化 BlockItem 对象。
 
@@ -72,6 +75,7 @@ class BlockItem(QGraphicsRectItem):
             block: 关联的块对象。
             parent: 父项，默认为 None。
         """
+
         super().__init__(parent)
         self.m_block: Block = block
         self.m_socket_items: List[SocketItem] = []
@@ -87,7 +91,7 @@ class BlockItem(QGraphicsRectItem):
         self.create_socket_items()
 
     def inlet_socket_accepting_connection(
-        self, scene_pos: QPointF
+            self, scene_pos: QPointF
     ) -> Optional[SocketItem]:
         """查找接受连接的入口插槽项。
 
@@ -147,6 +151,8 @@ class BlockItem(QGraphicsRectItem):
 
     def create_socket_items(self) -> None:
         """创建插槽项。"""
+        from .socket_item import SocketItem
+
         self.m_socket_items.clear()
 
         for socket in self.m_block.m_sockets:
@@ -156,10 +162,10 @@ class BlockItem(QGraphicsRectItem):
             self.m_socket_items.append(socket_item)
 
     def paint(
-        self,
-        painter: QPainter,
-        option: QStyleOptionGraphicsItem,
-        widget: Optional[QWidget] = None,
+            self,
+            painter: QPainter,
+            option: QStyleOptionGraphicsItem,
+            widget: Optional[QWidget] = None,
     ) -> None:
         """绘制块。
 
@@ -177,7 +183,7 @@ class BlockItem(QGraphicsRectItem):
         pixmap = self.m_block.m_properties.get("Pixmap")
 
         if self.m_block.m_properties.get("ShowPixmap", False) and isinstance(
-            pixmap, QPixmap
+                pixmap, QPixmap
         ):
             rect = self.rect()
             painter.setBrush(Qt.white)
@@ -195,7 +201,7 @@ class BlockItem(QGraphicsRectItem):
             painter.drawText(rect, Qt.AlignTop | Qt.AlignHCenter, self.m_block.m_name)
         else:
             grad = QLinearGradient(QPointF(0, 0), QPointF(self.rect().width(), 0))
-            if option.state & QStyleOptionGraphicsItem.State_Selected:
+            if option.state & QStyle.State_Selected:
                 painter.setPen(QPen(QBrush(QColor(0, 128, 0)), 1.5))
                 grad.setColorAt(0, QColor(230, 255, 230))
                 grad.setColorAt(1, QColor(200, 240, 180))
@@ -231,7 +237,7 @@ class BlockItem(QGraphicsRectItem):
         self.m_moved = False
 
     def itemChange(
-        self, change: QGraphicsRectItem.GraphicsItemChange, value: Union[QPointF, bool]
+            self, change: QGraphicsRectItem.GraphicsItemChange, value: Union[QPointF, bool]
     ) -> Union[QPointF, bool]:
         """处理项属性变化事件。
 
@@ -270,10 +276,10 @@ class BlockItem(QGraphicsRectItem):
             if scene_manager:
                 scene_rect = scene_manager.sceneRect()
                 if (
-                    pos.x() < scene_rect.left()
-                    or pos.y() < scene_rect.top()
-                    or (pos.x() + self.rect().width()) > scene_rect.right()
-                    or (pos.y() + self.rect().height()) > scene_rect.bottom()
+                        pos.x() < scene_rect.left()
+                        or pos.y() < scene_rect.top()
+                        or (pos.x() + self.rect().width()) > scene_rect.right()
+                        or (pos.y() + self.rect().height()) > scene_rect.bottom()
                 ):
                     scene_manager.setSceneRect(QRectF())
 
