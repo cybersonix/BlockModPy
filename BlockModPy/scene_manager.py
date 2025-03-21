@@ -172,7 +172,7 @@ class SceneManager(QGraphicsScene):
                 return item
         return None
 
-    def block_moved(self, block: Block) -> None:
+    def block_moved(self, block: Block, old_pos: QPointF) -> None:
         """处理块移动后的相关操作。
 
         当块发生移动时，此函数会被调用，用于更新与该块相关的连接器及其显示。
@@ -184,10 +184,11 @@ class SceneManager(QGraphicsScene):
 
         Args:
             block: 移动的块对象。
+            old_pos: 移动前的原始坐标，用于连接器调整计算。
         """
         cons = self.m_block_connector_map.get(block, set())
         for con in cons:
-            self.m_network.adjust_connector(con)
+            self.m_network.adjust_connector(con, old_pos)
             self.update_connector_segment_items(con, None)
         self.network_geometry_changed.emit()
 
@@ -296,9 +297,9 @@ class SceneManager(QGraphicsScene):
                 for j in range(i, len(segment_items)):
                     segment_items[j].m_segment_idx -= 1
                 if (
-                        i > 0
-                        and con.m_segments[i - 1].m_direction
-                        == con.m_segments[i].m_direction
+                    i > 0
+                    and con.m_segments[i - 1].m_direction
+                    == con.m_segments[i].m_direction
                 ):
                     con.m_segments[i - 1].m_offset += con.m_segments[i].m_offset
                     con.m_segments.pop(i)
@@ -350,7 +351,7 @@ class SceneManager(QGraphicsScene):
         return False
 
     def start_socket_connection(
-            self, outlet_socket_item: SocketItem, mouse_pos: QPointF
+        self, outlet_socket_item: SocketItem, mouse_pos: QPointF
     ) -> None:
         """开始一个插槽连接。
 
@@ -599,7 +600,7 @@ class SceneManager(QGraphicsScene):
         i = 0
         while i < len(self.m_connector_segment_items):
             if (
-                    self.m_connector_segment_items[i].m_connector is con_to_remove
+                self.m_connector_segment_items[i].m_connector is con_to_remove
             ):  # 关键修正点2
                 item = self.m_connector_segment_items.pop(i)
                 self.removeItem(item)
@@ -627,13 +628,13 @@ class SceneManager(QGraphicsScene):
             mouse_event: 鼠标事件对象。
         """
         already_in_connection_process = (
-                self.m_network.m_blocks
-                and self.m_network.m_blocks[-1].m_name == Globals.InvisibleLabel
+            self.m_network.m_blocks
+            and self.m_network.m_blocks[-1].m_name == Globals.InvisibleLabel
         )
         super().mousePressEvent(mouse_event)
         in_connection_process = (
-                self.m_network.m_blocks
-                and self.m_network.m_blocks[-1].m_name == Globals.InvisibleLabel
+            self.m_network.m_blocks
+            and self.m_network.m_blocks[-1].m_name == Globals.InvisibleLabel
         )
         if not already_in_connection_process and in_connection_process:
             self.m_block_items[-1].grabMouse()
@@ -648,8 +649,8 @@ class SceneManager(QGraphicsScene):
         """
         if self.m_currently_connecting:
             if (
-                    self.m_block_items
-                    and self.m_block_items[-1].block().m_name == Globals.InvisibleLabel
+                self.m_block_items
+                and self.m_block_items[-1].block().m_name == Globals.InvisibleLabel
             ):
                 p = self.m_block_items[-1].pos()
                 for bi in self.m_block_items:
@@ -665,7 +666,7 @@ class SceneManager(QGraphicsScene):
                     )
                     if socket_item is not None:
                         if not self.is_connected_socket(
-                                bi.block(), socket_item.socket()
+                            bi.block(), socket_item.socket()
                         ):
                             socket_item.m_hovered = True
                             socket_item.update()
@@ -687,8 +688,8 @@ class SceneManager(QGraphicsScene):
             # 检查是否在连接模式下，并且是否将连接器放置到可连接的插槽上
             if self.m_currently_connecting:
                 if (
-                        self.m_block_items
-                        and self.m_block_items[-1].block().m_name == Globals.InvisibleLabel
+                    self.m_block_items
+                    and self.m_block_items[-1].block().m_name == Globals.InvisibleLabel
                 ):
                     p = self.m_block_items[-1].pos()
                     for bi in self.m_block_items:
@@ -862,7 +863,7 @@ class SceneManager(QGraphicsScene):
         self.block_action_triggered.emit(block_item)
 
     def update_connector_segment_items(
-            self, con: Connector, current_item: Optional[ConnectorSegmentItem]
+        self, con: Connector, current_item: Optional[ConnectorSegmentItem]
     ) -> None:
         """更新连接器的线段图形项。
 
