@@ -210,9 +210,9 @@ class ZoomMeshGraphicsView(QGraphicsView):
             window_size = QSize(w, h)
 
             if (
-                    grid_spacing_pix != self.m_grid_spacing_pix_last
-                    or p1 != self.m_p_last
-                    or window_size != self.m_window_size_last
+                grid_spacing_pix != self.m_grid_spacing_pix_last
+                or p1 != self.m_p_last
+                or window_size != self.m_window_size_last
             ):
 
                 self.m_p_last = p1
