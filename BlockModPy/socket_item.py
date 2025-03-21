@@ -36,32 +36,34 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from qtpy.QtCore import Qt, QRectF
+from qtpy.QtCore import Qt, QRectF, QPointF
 from qtpy.QtGui import (
+    QPen,
     QPainter,
     QPainterPath,
     QFont,
     QFontMetrics,
     QColor,
     QBrush,
-    QStyleOptionGraphicsItem,
-    QPointF,
 )
 from qtpy.QtWidgets import (
-    QPen,
     QWidget,
     QGraphicsItem,
+    QStyleOptionGraphicsItem,
     QGraphicsSceneMouseEvent,
     QGraphicsSceneHoverEvent,
     QApplication,
 )
 
 from .block import Block
-from .block_item import BlockItem
 from .globals import Globals
-from .scene_manager import SceneManager
+
+if TYPE_CHECKING:
+    from .scene_manager import SceneManager
+    from .block_item import BlockItem
+
 from .socket import Socket
 
 
@@ -75,8 +77,9 @@ class SocketItem(QGraphicsItem):
             parent: 父项，通常是 BlockItem。
             socket: 关联的插槽对象。
         """
+        # 延迟导入，避免循环导入
         super().__init__(parent)
-        self.m_block: Block = parent.block()
+        self.m_block: Block = parent.m_block
         self.m_socket: Socket = socket
         self.m_hovered: bool = False
         self.m_symbol_rect: QRectF = QRectF()
@@ -185,7 +188,7 @@ class SocketItem(QGraphicsItem):
         """
         if (
             self.parentItem()
-            and self.parentItem().block().m_name == Globals.InvisibleLabel
+            and self.parentItem().m_block.m_name == Globals.InvisibleLabel
         ):
             return
 
