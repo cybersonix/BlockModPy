@@ -39,8 +39,14 @@ from __future__ import annotations
 import os
 from typing import List, Set, Tuple
 
-from qtpy.QtCore import QFile, QIODevice
-from qtpy.QtCore import Qt, QXmlStreamReader, QXmlStreamWriter
+from qtpy.QtCore import (
+    QFile,
+    QIODevice,
+    Qt,
+    QXmlStreamReader,
+    QXmlStreamWriter,
+    QPointF,
+)
 
 from .block import Block
 from .connector import Connector
@@ -232,11 +238,12 @@ class Network:
                 print(f"Error adjusting connector {connector.m_name}: {e}")
                 raise
 
-    def adjust_connector(self, connector: Connector) -> None:
+    def adjust_connector(self, connector: Connector, old_block_pos: QPointF) -> None:
         """调整单个连接器的几何信息。
 
         Args:
             connector: 需要调整的连接器对象。
+            old_block_pos: 块移动前的原始坐标。
 
         Raises:
             RuntimeError: 如果连接器的插槽无效。
@@ -251,8 +258,10 @@ class Network:
         start_line = source_block.socket_start_line(source_socket)
         end_line = target_block.socket_start_line(target_socket)
 
-        dx = end_line.p2().x() - start_line.p2().x()
-        dy = end_line.p2().y() - start_line.p2().y()
+        delta = source_block.m_pos - old_block_pos
+
+        dx = end_line.p2().x() - start_line.p2().x() + delta.x()
+        dy = end_line.p2().y() - start_line.p2().y() + delta.y()
 
         for segment in connector.m_segments:
             if segment.m_direction == Qt.Horizontal:
