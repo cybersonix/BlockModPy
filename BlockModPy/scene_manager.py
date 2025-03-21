@@ -1,8 +1,50 @@
+#  BSD 3-Clause License
+#
+#  This file is part of the BlockModPy Library (Python port).
+#
+#  Original C++ implementation:
+#  	Copyright (c) 2019, Andreas Nicolai (BSD-3-Clause)
+#
+#  Python port:
+#  	Copyright (c) 2025, Sun Hao
+#
+#  Redistribution and use in source and binary forms, with or without modification,
+#  are permitted provided that the following conditions are met:
+#
+#  1. Redistributions of source code must retain the above copyright notice, this
+#     list of conditions and the following disclaimer.
+#
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation
+#     and/or other materials provided with the distribution.
+#
+#  3. Neither the name of the original copyright holder (Andreas Nicolai),
+#     the BlockMod Library, nor the names of its contributors may be used to endorse
+#     or promote products derived from this software without specific prior written
+#     permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+#  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+#  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+#  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+#  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+#  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+#  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+#  OF THE POSSIBILITY OF SUCH DAMAGE.
+
 from typing import Union, List, Dict, Set, Optional
+
 from qtpy.QtCore import Qt, QPointF, QSize, QRectF, QLineF, QSizeF
 from qtpy.QtCore import Signal
 from qtpy.QtGui import QPixmap, QPainter
-from qtpy.QtWidgets import QGraphicsScene, QGraphicsItem, QApplication, QGraphicsSceneMouseEvent
+from qtpy.QtWidgets import (
+    QGraphicsScene,
+    QGraphicsItem,
+    QApplication,
+    QGraphicsSceneMouseEvent,
+)
 
 from .block import Block
 from .block_item import BlockItem
@@ -90,17 +132,24 @@ class SceneManager(QGraphicsScene):
             m = r.width()
             target_size.setHeight(int(r.height() / r.width() * w + 2 * border_size))
             h = target_size.height() + 2 * border_size
-            source_rect = QRectF(r.center().x() - 0.5 * m * eps,
-                                 r.center().y() - 0.5 * r.height() * eps,
-                                 eps * m, eps * r.height())
+            source_rect = QRectF(
+                r.center().x() - 0.5 * m * eps,
+                r.center().y() - 0.5 * r.height() * eps,
+                eps * m,
+                eps * r.height(),
+            )
         else:
             m = r.height()
-            source_rect = QRectF(r.center().x() - 0.5 * m * eps,
-                                 r.center().y() - 0.5 * m * eps,
-                                 eps * m, eps * m)
+            source_rect = QRectF(
+                r.center().x() - 0.5 * m * eps,
+                r.center().y() - 0.5 * m * eps,
+                eps * m,
+                eps * m,
+            )
 
-        target_rect = QRectF(border_size, border_size,
-                             w - 2 * border_size, h - 2 * border_size)
+        target_rect = QRectF(
+            border_size, border_size, w - 2 * border_size, h - 2 * border_size
+        )
 
         pm = QPixmap(target_size)
         pm.fill(Qt.white)
@@ -246,7 +295,11 @@ class SceneManager(QGraphicsScene):
                 del seg_item
                 for j in range(i, len(segment_items)):
                     segment_items[j].m_segment_idx -= 1
-                if i > 0 and con.m_segments[i - 1].m_direction == con.m_segments[i].m_direction:
+                if (
+                        i > 0
+                        and con.m_segments[i - 1].m_direction
+                        == con.m_segments[i].m_direction
+                ):
                     con.m_segments[i - 1].m_offset += con.m_segments[i].m_offset
                     con.m_segments.pop(i)
                     seg_item = segment_items.pop(i)
@@ -281,18 +334,24 @@ class SceneManager(QGraphicsScene):
         # 遍历所有关联的连接器
         for connector in connectors:
             # 检查源socket
-            _, source_socket = self.m_network.lookup_block_and_socket(connector.source_socket)
+            _, source_socket = self.m_network.lookup_block_and_socket(
+                connector.source_socket
+            )
             if s is source_socket:
                 return True
 
             # 检查目标socket
-            _, target_socket = self.m_network.lookup_block_and_socket(connector.target_socket)
+            _, target_socket = self.m_network.lookup_block_and_socket(
+                connector.target_socket
+            )
             if s is target_socket:
                 return True
 
         return False
 
-    def start_socket_connection(self, outlet_socket_item: SocketItem, mouse_pos: QPointF) -> None:
+    def start_socket_connection(
+            self, outlet_socket_item: SocketItem, mouse_pos: QPointF
+    ) -> None:
         """开始一个插槽连接。
 
         当用户点击一个出口插槽时，开始创建连接。创建一个虚拟块和虚拟插槽，
@@ -346,7 +405,7 @@ class SceneManager(QGraphicsScene):
         self.m_network.m_connectors.append(con)
 
         # 创建虚拟块的图形项，并添加到场景中
-        bi = self.create_block_item(self.m_network.m_blocks[-1])    # type: ignore
+        bi = self.create_block_item(self.m_network.m_blocks[-1])  # type: ignore
         bi.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
         bi.setPos(dummy_block.m_pos)
         bi.setPos(self.views()[0].mapToScene(mouse_pos))
@@ -368,7 +427,7 @@ class SceneManager(QGraphicsScene):
 
         如果当前正在连接中，移除虚拟块并结束连接状态。
         """
-        if self.m_network.m_blocks and self.m_network.m_blocks[-1].m_name == Globals.InvisibleLabel:    # type: ignore
+        if self.m_network.m_blocks and self.m_network.m_blocks[-1].m_name == Globals.InvisibleLabel:  # type: ignore
             self.remove_block(len(self.m_network.m_blocks) - 1)
         self.m_currently_connecting = False
 
@@ -420,18 +479,27 @@ class SceneManager(QGraphicsScene):
         try:
             b1, s1 = self.m_network.lookup_block_and_socket(con.m_source_socket)
         except Exception:
-            raise RuntimeError("[SceneManager::add_connector] Invalid source socket identifier.")
+            raise RuntimeError(
+                "[SceneManager::add_connector] Invalid source socket identifier."
+            )
         try:
             b2, s2 = self.m_network.lookup_block_and_socket(con.m_target_socket)
         except Exception:
-            raise RuntimeError("[SceneManager::add_connector] Invalid target socket identifier.")
+            raise RuntimeError(
+                "[SceneManager::add_connector] Invalid target socket identifier."
+            )
         if s1.m_inlet:
-            raise RuntimeError("[SceneManager::add_connector] Invalid source socket (must be an outlet socket).")
+            raise RuntimeError(
+                "[SceneManager::add_connector] Invalid source socket (must be an outlet socket)."
+            )
         if not s2.m_inlet:
-            raise RuntimeError("[SceneManager::add_connector] Invalid target socket (must be an inlet socket).")
+            raise RuntimeError(
+                "[SceneManager::add_connector] Invalid target socket (must be an inlet socket)."
+            )
         if self.is_connected_socket(b2, s2):
             raise RuntimeError(
-                "[SceneManager::add_connector] Invalid target socket (has already an incoming connection).")
+                "[SceneManager::add_connector] Invalid target socket (has already an incoming connection)."
+            )
         self.m_network.m_connectors.append(con)
         self.m_network.adjust_connector(self.m_network.m_connectors[-1])
 
@@ -486,8 +554,7 @@ class SceneManager(QGraphicsScene):
         # 更新剩余连接器
         # 直接删除相关连接器图形项（优化点）
         connectors_to_keep = [
-            con for con in self.m_network.m_connectors
-            if con not in related_connectors
+            con for con in self.m_network.m_connectors if con not in related_connectors
         ]
         # 清空并重建连接器
         for item in self.m_connector_segment_items:
@@ -531,7 +598,9 @@ class SceneManager(QGraphicsScene):
         # 删除关联图形项 (修正循环逻辑)
         i = 0
         while i < len(self.m_connector_segment_items):
-            if self.m_connector_segment_items[i].m_connector is con_to_remove:  # 关键修正点2
+            if (
+                    self.m_connector_segment_items[i].m_connector is con_to_remove
+            ):  # 关键修正点2
                 item = self.m_connector_segment_items.pop(i)
                 self.removeItem(item)
                 del item
@@ -557,11 +626,15 @@ class SceneManager(QGraphicsScene):
         Args:
             mouse_event: 鼠标事件对象。
         """
-        already_in_connection_process = (self.m_network.m_blocks and
-                                         self.m_network.m_blocks[-1].m_name == Globals.InvisibleLabel)
+        already_in_connection_process = (
+                self.m_network.m_blocks
+                and self.m_network.m_blocks[-1].m_name == Globals.InvisibleLabel
+        )
         super().mousePressEvent(mouse_event)
-        in_connection_process = (self.m_network.m_blocks and
-                                 self.m_network.m_blocks[-1].m_name == Globals.InvisibleLabel)
+        in_connection_process = (
+                self.m_network.m_blocks
+                and self.m_network.m_blocks[-1].m_name == Globals.InvisibleLabel
+        )
         if not already_in_connection_process and in_connection_process:
             self.m_block_items[-1].grabMouse()
 
@@ -574,18 +647,28 @@ class SceneManager(QGraphicsScene):
             mouse_event: 鼠标事件对象。
         """
         if self.m_currently_connecting:
-            if self.m_block_items and self.m_block_items[-1].block().m_name == Globals.InvisibleLabel:
+            if (
+                    self.m_block_items
+                    and self.m_block_items[-1].block().m_name == Globals.InvisibleLabel
+            ):
                 p = self.m_block_items[-1].pos()
                 for bi in self.m_block_items:
                     if bi.block().m_name == Globals.InvisibleLabel:
                         continue
+                    # 重置所有插槽状态
                     for si in bi.m_socket_items:
                         si.m_hovered = False
                         si.update()
-                    si = bi.inlet_socket_accepting_connection(p)
-                    if si and not self.is_connected_socket(bi.block(), si.socket()):
-                        si.m_hovered = True
-                        si.update()
+                    # 安全类型处理
+                    socket_item: Optional[SocketItem] = (
+                        bi.inlet_socket_accepting_connection(p)
+                    )
+                    if socket_item is not None:
+                        if not self.is_connected_socket(
+                                bi.block(), socket_item.socket()
+                        ):
+                            socket_item.m_hovered = True
+                            socket_item.update()
         super().mouseMoveEvent(mouse_event)
 
     def mouse_release_event(self, mouse_event: QGraphicsSceneMouseEvent) -> None:
@@ -603,7 +686,10 @@ class SceneManager(QGraphicsScene):
 
             # 检查是否在连接模式下，并且是否将连接器放置到可连接的插槽上
             if self.m_currently_connecting:
-                if self.m_block_items and self.m_block_items[-1].block().m_name == Globals.InvisibleLabel:
+                if (
+                        self.m_block_items
+                        and self.m_block_items[-1].block().m_name == Globals.InvisibleLabel
+                ):
                     p = self.m_block_items[-1].pos()
                     for bi in self.m_block_items:
                         if bi.block().m_name == Globals.InvisibleLabel:
@@ -613,7 +699,9 @@ class SceneManager(QGraphicsScene):
                         si = bi.inlet_socket_accepting_connection(p)
                         if si and not self.is_connected_socket(bi.block(), si.socket()):
                             # 找到目标插槽，记录起始插槽和目标插槽
-                            start_socket = self.m_network.m_connectors[-1].m_source_socket
+                            start_socket = self.m_network.m_connectors[
+                                -1
+                            ].m_source_socket
                             target_socket = f"{bi.block().m_name}.{si.socket().m_name}"
                             break
 
@@ -627,7 +715,9 @@ class SceneManager(QGraphicsScene):
                 con.m_target_socket = target_socket
                 self.m_network.m_connectors.append(con)
                 self.m_network.adjust_connector(self.m_network.m_connectors[-1])
-                self.update_connector_segment_items(self.m_network.m_connectors[-1], None)
+                self.update_connector_segment_items(
+                    self.m_network.m_connectors[-1], None
+                )
                 self.new_connection_added.emit()
             else:
                 # 如果没有选择任何块或连接器，发出清除选择的信号
@@ -717,8 +807,11 @@ class SceneManager(QGraphicsScene):
             start = start_line.p2()
             for i, seg in enumerate(con.m_segments):
                 item = self.create_connector_item(con)
-                next_point = start + QPointF(seg.m_offset, 0) if seg.m_direction == Qt.Horizontal else start + QPointF(
-                    0, seg.m_offset)
+                next_point = (
+                    start + QPointF(seg.m_offset, 0)
+                    if seg.m_direction == Qt.Horizontal
+                    else start + QPointF(0, seg.m_offset)
+                )
                 item.setLine(QLineF(start, next_point))
                 item.m_segment_idx = i  # 中间线段
                 new_conns.append(item)
@@ -757,7 +850,7 @@ class SceneManager(QGraphicsScene):
             # 发出信号，表示选中了连接器
             self.new_connector_selected.emit(
                 selected_connectors.pop().m_source_socket,
-                selected_connectors.pop().m_target_socket
+                selected_connectors.pop().m_target_socket,
             )
 
     def block_double_clicked(self, block_item: BlockItem) -> None:
@@ -768,7 +861,9 @@ class SceneManager(QGraphicsScene):
         """
         self.block_action_triggered.emit(block_item)
 
-    def update_connector_segment_items(self, con: Connector, current_item: Optional[ConnectorSegmentItem]) -> None:
+    def update_connector_segment_items(
+            self, con: Connector, current_item: Optional[ConnectorSegmentItem]
+    ) -> None:
         """更新连接器的线段图形项。
 
         Args:
@@ -815,7 +910,9 @@ class SceneManager(QGraphicsScene):
         # 添加缺失的线段图形项
         for i in range(len(segment_items), items_needed):
             item = self.create_connector_item(con)
-            item.m_is_highlighted = current_item.m_is_highlighted if current_item else False
+            item.m_is_highlighted = (
+                current_item.m_is_highlighted if current_item else False
+            )
             self.addItem(item)
             self.m_connector_segment_items.append(item)
             segment_items.append(item)
@@ -829,29 +926,40 @@ class SceneManager(QGraphicsScene):
 
         # 更新所有线段图形项的几何信息
         try:
-            # 更新起始和结束线段
-            socket: Optional[Socket] = None
-            block: Optional[Block] = None
-            self.m_network.lookup_block_and_socket(con.m_source_socket, block, socket)
-            if block and socket:
-                start_line = block.socket_start_line(socket)
+            # 分别查找源插槽和目标插槽
+            source_block, source_socket = self.m_network.lookup_block_and_socket(
+                con.m_source_socket
+            )
+            target_block, target_socket = self.m_network.lookup_block_and_socket(
+                con.m_target_socket
+            )
+
+            # 更新起始线段（源插槽）
+            if source_block and source_socket:
+                start_line = source_block.socket_start_line(source_socket)
                 start_segment.setLine(start_line)
+            else:
+                raise ValueError("Source socket not found")
 
-                # self.m_network.lookup_block_and_socket(con.m_target_socket, block, socket)
-                # if block and socket:
-                end_line = block.socket_start_line(socket)
+            # 更新结束线段（目标插槽）
+            if target_block and target_socket:
+                end_line = target_block.socket_start_line(target_socket)
                 end_segment.setLine(end_line)
+            else:
+                raise ValueError("Target socket not found")
 
-                # 更新中间线段
-                start = start_line.p2()
-                for i, seg in enumerate(con.m_segments):
-                    item = segment_items[i]
-                    next_point = start + QPointF(seg.m_offset,
-                                                 0) if seg.m_direction == Qt.Horizontal else start + QPointF(
-                        0, seg.m_offset)
-                    item.setLine(QLineF(start, next_point))
-                    item.m_segment_idx = i
-                    start = next_point
+            # 更新中间线段（保持与C++相同的逻辑）
+            start = start_line.p2()
+            for i, seg in enumerate(con.m_segments):
+                item = segment_items[i]
+                next_point = (
+                    start + QPointF(seg.m_offset, 0)
+                    if seg.m_direction == Qt.Horizontal
+                    else start + QPointF(0, seg.m_offset)
+                )
+                item.setLine(QLineF(start, next_point))
+                item.m_segment_idx = i
+                start = next_point
 
         except Exception as e:
             print(f"Error updating connector segments: {e}")
