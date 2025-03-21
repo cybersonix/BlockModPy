@@ -9,7 +9,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.8"
 qtpy = "^2.4.3"
-pyside2 = {version = "^5.15.2.1", python = "<3.11"}
+pyside2 = { version = "^5.15.2.1", python = "<3.11" }
 
 [[tool.poetry.source]]
 name = "tsinghua"
@@ -18,7 +18,14 @@ priority = "primary"
 
 
 [tool.poetry.group.dev.dependencies]
-black = "24.8.0"
+black = [
+    { version = "<=24.8.0", python = ">=3.8,<3.9" },
+    { version = "^25.1.0", python = ">=3.9" }
+]
+mypy = [
+    { version = "<=1.14.1", python = ">=3.8,<3.9" },
+    { version = "^1.15.0", python = ">=3.9" }
+]
 
 [build-system]
 requires = ["poetry-core"]
