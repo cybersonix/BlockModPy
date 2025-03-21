@@ -67,7 +67,7 @@ class BlockItem(QGraphicsRectItem):
     """BlockItem 类，表示图形场景中的块项，负责绘制块并管理其插槽项。"""
 
     def __init__(
-            self, block: Block, parent: Optional[QGraphicsRectItem] = None
+        self, block: Block, parent: Optional[QGraphicsRectItem] = None
     ) -> None:
         """初始化 BlockItem 对象。
 
@@ -91,7 +91,7 @@ class BlockItem(QGraphicsRectItem):
         self.create_socket_items()
 
     def inlet_socket_accepting_connection(
-            self, scene_pos: QPointF
+        self, scene_pos: QPointF
     ) -> Optional[SocketItem]:
         """查找接受连接的入口插槽项。
 
@@ -162,10 +162,10 @@ class BlockItem(QGraphicsRectItem):
             self.m_socket_items.append(socket_item)
 
     def paint(
-            self,
-            painter: QPainter,
-            option: QStyleOptionGraphicsItem,
-            widget: Optional[QWidget] = None,
+        self,
+        painter: QPainter,
+        option: QStyleOptionGraphicsItem,
+        widget: Optional[QWidget] = None,
     ) -> None:
         """绘制块。
 
@@ -183,7 +183,7 @@ class BlockItem(QGraphicsRectItem):
         pixmap = self.m_block.m_properties.get("Pixmap")
 
         if self.m_block.m_properties.get("ShowPixmap", False) and isinstance(
-                pixmap, QPixmap
+            pixmap, QPixmap
         ):
             rect = self.rect()
             painter.setBrush(Qt.white)
@@ -237,7 +237,7 @@ class BlockItem(QGraphicsRectItem):
         self.m_moved = False
 
     def itemChange(
-            self, change: QGraphicsRectItem.GraphicsItemChange, value: Union[QPointF, bool]
+        self, change: QGraphicsRectItem.GraphicsItemChange, value: Union[QPointF, bool]
     ) -> Union[QPointF, bool]:
         """处理项属性变化事件。
 
@@ -276,10 +276,10 @@ class BlockItem(QGraphicsRectItem):
             if scene_manager:
                 scene_rect = scene_manager.sceneRect()
                 if (
-                        pos.x() < scene_rect.left()
-                        or pos.y() < scene_rect.top()
-                        or (pos.x() + self.rect().width()) > scene_rect.right()
-                        or (pos.y() + self.rect().height()) > scene_rect.bottom()
+                    pos.x() < scene_rect.left()
+                    or pos.y() < scene_rect.top()
+                    or (pos.x() + self.rect().width()) > scene_rect.right()
+                    or (pos.y() + self.rect().height()) > scene_rect.bottom()
                 ):
                     scene_manager.setSceneRect(QRectF())
 
