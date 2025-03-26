@@ -36,7 +36,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 
 from qtpy.QtCore import Qt, QRectF, QPointF
 from qtpy.QtGui import (
@@ -59,15 +59,12 @@ from qtpy.QtWidgets import (
 
 from .block import Block
 from .globals import Globals
-
-if TYPE_CHECKING:
-    from .scene_manager import SceneManager
-    from .block_item import BlockItem
-
 from .socket import Socket
 
 
 class SocketItem(QGraphicsItem):
+    from .block_item import BlockItem
+
     """SocketItem 类，表示图形场景中的插槽项，负责绘制插槽并处理相关事件。"""
 
     def __init__(self, parent: BlockItem, socket: Socket) -> None:
@@ -77,7 +74,6 @@ class SocketItem(QGraphicsItem):
             parent: 父项，通常是 BlockItem。
             socket: 关联的插槽对象。
         """
-        # 延迟导入，避免循环导入
         super().__init__(parent)
         self.m_block: Block = parent.m_block
         self.m_socket: Socket = socket
@@ -87,6 +83,10 @@ class SocketItem(QGraphicsItem):
         self.update_socket_item()
         self.setZValue(12)
         self.setAcceptHoverEvents(True)
+
+    @property
+    def socket(self) -> Socket:
+        return self.m_socket
 
     def update_socket_item(self) -> None:
         """更新插槽项的位置和大小。"""
@@ -130,14 +130,15 @@ class SocketItem(QGraphicsItem):
         text_bounding_rect = metrics.boundingRect(self.m_socket.m_name)
         text_bounding_rect.setWidth(text_bounding_rect.width() + 6)
 
-        if self.m_socket.direction() == Socket.Direction.Left:
-            rect.moveLeft(rect.left() - text_bounding_rect.width() - 6)
-        elif self.m_socket.direction() == Socket.Direction.Right:
-            rect.setWidth(rect.width() + text_bounding_rect.width() + 6)
-        elif self.m_socket.direction() == Socket.Direction.Top:
-            rect.moveTop(rect.top() - text_bounding_rect.width() - 6)
-        elif self.m_socket.direction() == Socket.Direction.Bottom:
-            rect.setHeight(rect.height() + text_bounding_rect.width() + 6)
+        # if self.m_socket.direction() == Socket.Direction.Left:
+        #     rect.moveLeft(rect.left() - text_bounding_rect.width() - 6)
+        # elif self.m_socket.direction() == Socket.Direction.Right:
+        #     rect.setWidth(rect.width() + text_bounding_rect.width() + 6)
+        # elif self.m_socket.direction() == Socket.Direction.Top:
+        #     rect.moveTop(rect.top() - text_bounding_rect.width() - 6)
+        # elif self.m_socket.direction() == Socket.Direction.Bottom:
+        #     rect.setHeight(6)
+        #     rect.setHeight(rect.height() + text_bounding_rect.width() + 6)
 
         return rect
 
@@ -147,14 +148,15 @@ class SocketItem(QGraphicsItem):
         Args:
             event: 鼠标悬停事件对象。
         """
+        from .scene_manager import SceneManager
+
         scene_manager = self.scene()
         if isinstance(scene_manager, SceneManager):
             if (
-                not self.m_socket.m_inlet
-                and not scene_manager.is_currently_connecting()
+                not self.m_socket.m_inlet and not scene_manager.is_currently_connecting
             ) or (
                 self.m_socket.m_inlet
-                and scene_manager.is_currently_connecting()
+                and scene_manager.is_currently_connecting
                 and not scene_manager.is_connected_socket(self.m_block, self.m_socket)
             ):
                 if QApplication.overrideCursor() is None:
@@ -186,6 +188,8 @@ class SocketItem(QGraphicsItem):
             option: 样式选项。
             widget: 绘制目标部件，默认为 None。
         """
+        from .scene_manager import SceneManager
+
         if (
             self.parentItem()
             and self.parentItem().m_block.m_name == Globals.InvisibleLabel
@@ -319,6 +323,8 @@ class SocketItem(QGraphicsItem):
         Args:
             event: 鼠标事件对象。
         """
+        from .scene_manager import SceneManager
+
         if (
             not self.m_socket.m_inlet
             and event.button() == Qt.LeftButton
@@ -329,5 +335,4 @@ class SocketItem(QGraphicsItem):
                 pos = event.pos()
                 pos = self.mapToScene(pos)
                 scene_manager.start_socket_connection(self, pos)
-                event.accept()
         super().mousePressEvent(event)
