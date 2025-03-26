@@ -45,7 +45,7 @@ from BlockModPy.globals import Globals
 from BlockModPy.network import Network
 from BlockModPy.scene_manager import SceneManager
 from BlockModPy.socket import Socket
-from ui.dialog import Ui_BlockModPyDemoDialog  # 导入自动生成的UI类
+from .ui.dialog import Ui_BlockModPyDemoDialog  # 导入自动生成的UI类
 
 
 class DialogDemo(QDialog, Ui_BlockModPyDemoDialog):
@@ -61,6 +61,8 @@ class DialogDemo(QDialog, Ui_BlockModPyDemoDialog):
         Args:
             parent: 父级窗口，默认为None
         """
+        # 设置随机种子以确保测试可重复
+        random.seed(0)
         super().__init__(
             parent, Qt.Window | Qt.WindowMinMaxButtonsHint | Qt.WindowCloseButtonHint
         )
@@ -86,6 +88,9 @@ class DialogDemo(QDialog, Ui_BlockModPyDemoDialog):
 
         # 加载示例网络
         # self.load_network("demo.bm")
+
+        self.gridLayout_2.setColumnStretch(0, 1)
+        self.gridLayout_2.setRowStretch(1, 1)
 
         # 暂时隐藏块编辑器
         self.groupBox_2.setVisible(False)
@@ -182,12 +187,12 @@ class DialogDemo(QDialog, Ui_BlockModPyDemoDialog):
 
         # 随机位置（0-30格）
         block.m_pos = QPointF(
-            random.randint(0, 30) * Globals.GridSpacing,
-            random.randint(0, 30) * Globals.GridSpacing,
+            int(random.uniform(0, 30)) * Globals.GridSpacing,
+            int(random.uniform(0, 30)) * Globals.GridSpacing,
         )
 
         # 生成随机插槽
-        for i in range(grid_x - 2):
+        for i in range(0, grid_x - 2, 2):
             # 顶部边缘插槽
             if random.random() < 1 / 6:
                 self._add_random_socket(block, i, True)
