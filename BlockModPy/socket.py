@@ -70,7 +70,7 @@ class Socket:
 
     def __init__(self) -> None:
         self.m_name: str = ""  # 插槽名称
-        self.m_pos: QPointF = QPointF()  # 插槽位置
+        self.m_pos: QPointF = QPointF(0, 0)  # 插槽位置
         self.m_orientation: Qt.Orientation = Qt.Horizontal  # 插槽方向
         self.m_inlet: bool = False  # 是否为输入插槽
 
@@ -83,15 +83,15 @@ class Socket:
             返回计算得到的方向枚举值。
         """
         if self.m_orientation == Qt.Horizontal:
-            if self.m_pos.x() == 0.0:
-                return self.Direction.Left
-            else:
-                return self.Direction.Right
+            # 水平方向：左边缘为Left，右边缘为Right
+            return (
+                self.Direction.Left if (self.m_pos.x() == 0) else self.Direction.Right
+            )
         else:
-            if self.m_pos.y() == 0.0:
-                return self.Direction.Top
-            else:
-                return self.Direction.Bottom
+            # 垂直方向：上边缘为Top，下边缘为Bottom
+            return (
+                self.Direction.Top if (self.m_pos.y() == 0) else self.Direction.Bottom
+            )
 
     def __eq__(self, other: object) -> bool:
         """重载相等运算符，支持多种比较方式。
@@ -225,6 +225,6 @@ class Socket:
         """
         try:
             x, y = map(float, point_str.split(","))
-            return Qt.QPointF(x, y)
+            return QPointF(x, y)
         except ValueError:
             raise RuntimeError(f"Invalid point format: {point_str}")
