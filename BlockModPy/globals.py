@@ -40,6 +40,9 @@ from typing import ClassVar
 class Globals:
     """全局配置类，提供与网格、字体和标签相关的全局设置和工具方法。"""
 
+    # # 插槽悬停距离，用于确定插槽是否被悬停
+    # SocketOverhang: ClassVar[float] = 10.0
+
     # 网格间距，用于对齐块、连接器和插槽
     GridSpacing: ClassVar[float] = 8.0  # 像素单位
 
