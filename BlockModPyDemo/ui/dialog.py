@@ -8,11 +8,12 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide2.QtCore import *
-from PySide2.QtGui import *
-from PySide2.QtWidgets import *
+from qtpy.QtCore import *
+from qtpy.QtGui import *
+from qtpy.QtWidgets import *
 
 from BlockModPy.zoom_mesh_graphics_view import ZoomMeshGraphicsView
+from BlockModPyDemo.resources import BlockModDemoPy_rc  # noqa
 
 
 class Ui_BlockModPyDemoDialog(object):
