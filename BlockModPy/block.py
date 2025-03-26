@@ -46,10 +46,19 @@ from .socket import Socket
 
 
 class Block:
-    """Block 类，表示网络中的一个块，包含块的名称、位置、大小、插槽等属性。"""
+    """表示流程图中的块，包含位置、大小、插槽及属性。
+
+    Attributes:
+        m_name: 块名称。
+        m_pos: 块在场景中的位置。
+        m_size: 块的尺寸（宽×高）。
+        m_sockets: 块的插槽列表。
+        m_properties: 块的自定义属性（如显示图片开关）。
+        m_connection_helper_block: 是否为辅助连接的虚拟块。
+    """
 
     def __init__(self, name: str = "", x: float = 0.0, y: float = 0.0) -> None:
-        """初始化 Block 对象。
+        """初始化对象。
 
         Args:
             name: 块的名称。
@@ -59,7 +68,7 @@ class Block:
 
         self.m_name: str = name
         self.m_pos: QPointF = QPointF(x, y)
-        self.m_size: QSizeF = QSizeF()
+        self.m_size: QSizeF = QSizeF(100, 50)
         self.m_sockets: List[Socket] = []
         self.m_properties: Dict[str, Any] = {}
         self.m_connection_helper_block: bool = False
@@ -71,10 +80,10 @@ class Block:
             reader: XML 读取器对象。
 
         Raises:
-            RuntimeError: 如果 XML 格式错误。
+            RuntimeError: XML 格式错误时触发。
         """
         if not reader.isStartElement():
-            raise RuntimeError("Expected start element.")
+            raise RuntimeError("需要起始元素。")
 
         # 读取 Block 元素的属性
         self.m_name = reader.attributes().value("name")
@@ -106,7 +115,7 @@ class Block:
                             if ename == "Properties":
                                 break
                 else:
-                    reader.raiseError(f"Found unknown element '{ename}' in Block tag.")
+                    reader.raiseError(f"在块标签中发现未知元素：'{ename}'。")
                     return
             elif reader.isEndElement():
                 ename = reader.name()
@@ -141,37 +150,46 @@ class Block:
         writer.writeEndElement()
 
     def socket_start_line(self, socket: Socket) -> QLineF:
-        """获取插槽的起始线。
+        """获取插槽的起始线段。
 
         Args:
-            socket: 插槽对象。
+            socket: 目标插槽对象。
 
         Returns:
-            插槽的起始线。
+            插槽的起始线段，用于连接器绘制。
         """
         if self.m_name == Globals.InvisibleLabel:
-            start_point = QPointF(socket.m_pos) + self.m_pos
+            start_point = socket.m_pos + self.m_pos
             return QLineF(start_point, start_point)
 
-        other_point = socket.m_pos
-        direction = socket.direction()
+        # 根据插座方向计算基础位置
+        if socket.m_orientation == Qt.Horizontal:
+            base_x = 0 if socket.m_inlet else self.m_size.width()
+            direction = -1 if socket.m_inlet else 1
+            base_pos = QPointF(base_x, self.m_size.height() / 2)
+            end_offset = QPointF(Globals.GridSpacing * 2 * direction, 0)
+        else:
+            if socket.m_inlet:
+                # 入口插座位于顶部
+                base_y = 0
+                direction = -1
+            else:
+                # 出口插座位于底部
+                base_y = self.m_size.height()
+                direction = 1
+            base_pos = QPointF(self.m_size.width() / 2, base_y)
+            end_offset = QPointF(0, Globals.GridSpacing * 2 * direction)
 
-        offset = {
-            Socket.Direction.Left: QPointF(-2 * Globals.GridSpacing, 0),
-            Socket.Direction.Right: QPointF(2 * Globals.GridSpacing, 0),
-            Socket.Direction.Top: QPointF(0, -2 * Globals.GridSpacing),
-            Socket.Direction.Bottom: QPointF(0, 2 * Globals.GridSpacing),
-        }.get(direction, QPointF())
-
-        start_point = QPointF(socket.m_pos) + self.m_pos
-        other_point = other_point + self.m_pos + offset
-        return QLineF(start_point, other_point)
+            # 转换为场景坐标
+        start_point = base_pos + self.m_pos
+        end_point = base_pos + end_offset + self.m_pos
+        return QLineF(start_point, end_point)
 
     def find_socket_insert_position(self, inlet_socket: bool) -> Tuple[int, int]:
-        """查找插槽的插入坐标 (x, y)。
+        """计算新插槽的插入位置坐标。
 
         Args:
-            inlet_socket: 是否为入口插槽。
+            inlet_socket: 是否为入口插槽（True）或出口插槽（False）。
 
         Returns:
             插槽的 X、Y 坐标。
@@ -227,28 +245,30 @@ class Block:
             if int(socket.m_pos.x()) == 0 and 0 < row_idx < row_count:
                 left_sockets[row_idx] += 1
             elif (
-                int(socket.m_pos.x()) == int(self.m_size.width())
-                and 0 < row_idx < row_count
+                    int(socket.m_pos.x()) == int(self.m_size.width())
+                    and 0 < row_idx < row_count
             ):
                 right_sockets[row_idx] += 1
             elif int(socket.m_pos.y()) == 0 and 0 < col_idx < col_count:
                 top_sockets[col_idx] += 1
             elif (
-                int(socket.m_pos.y()) == int(self.m_size.height())
-                and 0 < col_idx < col_count
+                    int(socket.m_pos.y()) == int(self.m_size.height())
+                    and 0 < col_idx < col_count
             ):
                 bottom_sockets[col_idx] += 1
 
         return left_sockets, top_sockets, right_sockets, bottom_sockets
 
     def auto_update_sockets(
-        self, inlet_sockets: List[str], outlet_sockets: List[str]
+            self, inlet_sockets: List[str], outlet_sockets: List[str]
     ) -> None:
         """自动更新插槽。
 
+        根据指定的插槽名称自动更新插槽列表。
+
         Args:
-            inlet_sockets: 入口插槽列表。
-            outlet_sockets: 出口插槽列表。
+            inlet_sockets: 需要保留的入口插槽名称列表。
+            outlet_sockets: 需要保留的出口插槽名称列表。
         """
         remaining_sockets = []
         for socket in self.m_sockets:
@@ -316,10 +336,10 @@ class Block:
             self.m_sockets.append(new_socket)
 
     def filter_sockets(self, inlet_socket: bool) -> List[Socket]:
-        """过滤插槽。
+        """筛选入口或出口插槽列表。
 
         Args:
-            inlet_socket: 是否为入口插槽。
+            inlet_socket: 是否为入口插槽（True）或出口插槽（False）。
 
         Returns:
             符合条件的插槽列表。
@@ -328,16 +348,19 @@ class Block:
 
     @staticmethod
     def _read_text_element(reader: QXmlStreamReader) -> str:
-        """读取 XML 文本元素。
+        """读取 XML 元素的文本内容。
 
         Args:
             reader: XML 读取器对象。
 
         Returns:
             文本内容。
+
+        Raises:
+            读取过程中发生错误时触发。
         """
         if not reader.isStartElement():
-            raise RuntimeError("Expected start element")
+            raise RuntimeError("需要起始元素。")
         text = reader.readElementText()
         if reader.hasError():
             raise RuntimeError(reader.errorString())
@@ -348,10 +371,10 @@ class Block:
         """解码点坐标。
 
         Args:
-            pos: 点坐标字符串。
+            pos: 点坐标字符串（格式："x,y"）。
 
         Returns:
-            解码后的点坐标。
+            解码后的点坐标对象。
         """
         x, y = map(float, pos.split(","))
         return QPointF(x, y)
@@ -361,20 +384,20 @@ class Block:
         """编码点坐标。
 
         Args:
-            point: 点坐标。
+            point: 需要编码的坐标对象。
 
         Returns:
-            编码后的点坐标字符串。
+            编码后的点坐标字符串（格式："x,y"）。
         """
         return f"{point.x()},{point.y()}"
 
     @staticmethod
     def _read_list(reader: QXmlStreamReader, sockets: List[Socket]) -> None:
-        """读取插槽列表。
+        """从 XML 读取插槽列表。
 
         Args:
             reader: XML 读取器对象。
-            sockets: 插槽列表。
+            sockets: 存储读取结果的插槽列表。
         """
         while not reader.atEnd() and not reader.hasError():
             reader.readNext()
