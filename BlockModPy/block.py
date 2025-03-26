@@ -245,22 +245,22 @@ class Block:
             if int(socket.m_pos.x()) == 0 and 0 < row_idx < row_count:
                 left_sockets[row_idx] += 1
             elif (
-                    int(socket.m_pos.x()) == int(self.m_size.width())
-                    and 0 < row_idx < row_count
+                int(socket.m_pos.x()) == int(self.m_size.width())
+                and 0 < row_idx < row_count
             ):
                 right_sockets[row_idx] += 1
             elif int(socket.m_pos.y()) == 0 and 0 < col_idx < col_count:
                 top_sockets[col_idx] += 1
             elif (
-                    int(socket.m_pos.y()) == int(self.m_size.height())
-                    and 0 < col_idx < col_count
+                int(socket.m_pos.y()) == int(self.m_size.height())
+                and 0 < col_idx < col_count
             ):
                 bottom_sockets[col_idx] += 1
 
         return left_sockets, top_sockets, right_sockets, bottom_sockets
 
     def auto_update_sockets(
-            self, inlet_sockets: List[str], outlet_sockets: List[str]
+        self, inlet_sockets: List[str], outlet_sockets: List[str]
     ) -> None:
         """自动更新插槽。
 
