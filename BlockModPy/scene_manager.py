@@ -57,14 +57,39 @@ from .socket_item import SocketItem
 
 
 class SceneManager(QGraphicsScene):
-    network_geometry_changed = Signal()
-    new_block_selected = Signal(str)
-    new_connection_added = Signal()
-    selection_cleared = Signal()
-    new_connector_selected = Signal(str, str)
-    block_action_triggered = Signal(BlockItem)
+    """管理图形场景中块、连接器及交互的场景管理器。
+
+    继承自 QGraphicsScene，负责维护块和连接器的图形表示，
+    处理用户交互（如连接创建、移动）并同步网络数据模型。
+
+    Attributes:
+        network_geometry_changed: 当网络几何结构变化时触发。
+        new_block_selected: 当块被选中时触发，携带块名称。
+        new_connection_added: 当新连接创建完成时触发。
+        selection_cleared: 当选择被清除时触发。
+        new_connector_selected: 当连接器被选中时触发，携带源/目标插槽标识。
+        block_action_triggered: 当块被双击时触发，携带块项对象。
+
+        m_network: 当前关联的网络数据模型。
+        m_block_items: 场景中的块图形项列表。
+        m_connector_segment_items: 连接器线段图形项列表。
+        m_block_connector_map: 块到其关联连接器的映射。
+        m_currently_connecting: 标记当前是否处于连接创建状态。
+    """
+
+    network_geometry_changed: Signal = Signal()
+    new_block_selected: Signal = Signal(str)
+    new_connection_added: Signal = Signal()
+    selection_cleared: Signal = Signal()
+    new_connector_selected: Signal = Signal(str, str)
+    block_action_triggered: Signal = Signal(BlockItem)
 
     def __init__(self, parent=None) -> None:
+        """初始化场景管理器。
+
+        Args:
+            parent (QObject, optional): 父对象。默认为 None。
+        """
         super().__init__(parent)
         self.m_network: Network = Network()
         self.m_block_items: List[BlockItem] = []
@@ -75,11 +100,17 @@ class SceneManager(QGraphicsScene):
     def __del__(self) -> None:
         del self.m_network
 
+    @property
+    def is_currently_connecting(self) -> bool:
+        return self.m_currently_connecting
+
     def set_network(self, network: Network) -> None:
-        """设置网络对象，并更新场景中的块和连接器。
+        """设置网络对象，并同步场景中的块和连接器。
+
+        移除原有块和连接器项，根据新网络对象重建图形项。
 
         Args:
-            network: 需要设置的网络对象。
+            network: 需要设置的新网络对象。
         """
         self.m_network = network
         for item in self.m_block_items:
@@ -107,7 +138,7 @@ class SceneManager(QGraphicsScene):
         """获取当前网络对象。
 
         Returns:
-            当前网络对象。
+            当前关联的网络对象。
         """
         return self.m_network
 
@@ -257,7 +288,7 @@ class SceneManager(QGraphicsScene):
         expected_length = len(con.m_segments)
         for idx in range(expected_length):
             if idx not in segment_items_dict:
-                raise ValueError(f"Missing segment item for index {idx}")
+                raise ValueError(f"缺少索引为{idx}的线段项")
             segment_items.append(segment_items_dict[idx])
 
         update_segments: bool = False
@@ -328,7 +359,7 @@ class SceneManager(QGraphicsScene):
             如果插槽已经连接则返回 True，否则返回 False。
         """
         # 查找Block对应的连接器集合
-        connectors = self.block_connector_map.get(b)
+        connectors = self.m_block_connector_map.get(b)
         if not connectors:
             return False
 
@@ -336,14 +367,14 @@ class SceneManager(QGraphicsScene):
         for connector in connectors:
             # 检查源socket
             _, source_socket = self.m_network.lookup_block_and_socket(
-                connector.source_socket
+                connector.m_source_socket
             )
             if s is source_socket:
                 return True
 
             # 检查目标socket
             _, target_socket = self.m_network.lookup_block_and_socket(
-                connector.target_socket
+                connector.m_target_socket
             )
             if s is target_socket:
                 return True
@@ -362,7 +393,7 @@ class SceneManager(QGraphicsScene):
             outlet_socket_item: 出口插槽项，表示用户点击的插槽。
             mouse_pos: 鼠标点击的位置，用于定位虚拟块。
         """
-        assert not outlet_socket_item.socket().m_inlet
+        assert not outlet_socket_item.socket.m_inlet
 
         # 取消所有块和连接线段的选中状态
         for block in self.m_block_items:
@@ -373,23 +404,23 @@ class SceneManager(QGraphicsScene):
         # 获取出口插槽的父块和插槽信息
         bitem = outlet_socket_item.parentItem()
         assert isinstance(bitem, BlockItem)
-        source_block = bitem.block()
-        source_socket = outlet_socket_item.socket()
+        source_block = bitem.block
+        source_socket = outlet_socket_item.socket
         start_socket_name = f"{source_block.m_name}.{source_socket.m_name}"
 
         # 创建一个虚拟块，用于表示连接的起点
         dummy_block = Block()
         dummy_block.m_pos = mouse_pos
         dummy_block.m_size = QSizeF(20, 20)
-        dummy_block.m_name = Globals.InvisibleLabel
+        dummy_block.m_name = Globals.InvisibleLabel.strip()
         dummy_block.m_connection_helper_block = True
 
         # 创建一个虚拟插槽，用于表示连接的目标
         dummy_socket = Socket()
-        dummy_socket.m_name = Globals.InvisibleLabel
+        dummy_socket.m_name = Globals.InvisibleLabel.strip()
         dummy_socket.m_inlet = True
-        dummy_socket.m_orientation = Qt.Horizontal
-        dummy_socket.m_pos = QPointF(0, 0)
+        dummy_socket.m_orientation = Qt.Vertical
+        dummy_socket.m_pos = QPointF(10, 10)
         dummy_block.m_sockets.append(dummy_socket)
 
         # 将虚拟块添加到网络中
@@ -409,7 +440,8 @@ class SceneManager(QGraphicsScene):
         bi = self.create_block_item(self.m_network.m_blocks[-1])  # type: ignore
         bi.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
         bi.setPos(dummy_block.m_pos)
-        bi.setPos(self.views()[0].mapToScene(mouse_pos))
+        view = self.views()[0]
+        bi.setPos(view.mapToScene(mouse_pos.toPoint()))
 
         self.m_block_items.append(bi)
         self.addItem(bi)
@@ -442,7 +474,7 @@ class SceneManager(QGraphicsScene):
         selected_blocks = []
         for item in selected:
             if isinstance(item, BlockItem):
-                selected_blocks.append(item.block())
+                selected_blocks.append(item.block)
         return selected_blocks
 
     def selected_connector(self) -> Optional[Connector]:
@@ -480,27 +512,21 @@ class SceneManager(QGraphicsScene):
         try:
             b1, s1 = self.m_network.lookup_block_and_socket(con.m_source_socket)
         except Exception:
-            raise RuntimeError(
-                "[SceneManager::add_connector] Invalid source socket identifier."
-            )
+            raise RuntimeError("[SceneManager::add_connector] 无效的源插槽标识符。")
         try:
             b2, s2 = self.m_network.lookup_block_and_socket(con.m_target_socket)
         except Exception:
-            raise RuntimeError(
-                "[SceneManager::add_connector] Invalid target socket identifier."
-            )
+            raise RuntimeError("[SceneManager::add_connector] 无效的目标插槽标识符。")
         if s1.m_inlet:
             raise RuntimeError(
-                "[SceneManager::add_connector] Invalid source socket (must be an outlet socket)."
+                "[SceneManager::add_connector] 无效的源插槽（必须是出口插槽）。"
             )
         if not s2.m_inlet:
             raise RuntimeError(
-                "[SceneManager::add_connector] Invalid target socket (must be an inlet socket)."
+                "[SceneManager::add_connector] 无效的目标插槽（必须是入口插槽）。"
             )
         if self.is_connected_socket(b2, s2):
-            raise RuntimeError(
-                "[SceneManager::add_connector] Invalid target socket (has already an incoming connection)."
-            )
+            raise RuntimeError("[SceneManager::add_connector] 目标插槽已存在连接。")
         self.m_network.m_connectors.append(con)
         self.m_network.adjust_connector(self.m_network.m_connectors[-1])
 
@@ -525,7 +551,7 @@ class SceneManager(QGraphicsScene):
                     block_to_remove = b
                     break
             else:
-                raise RuntimeError("[SceneManager::remove_block] Block not in network")
+                raise RuntimeError("[SceneManager::remove_block] 块不在网络中。")
 
         # 有效性检查
         assert 0 <= block_index < len(self.m_network.m_blocks)
@@ -588,7 +614,7 @@ class SceneManager(QGraphicsScene):
                     connector_index = idx
                     break
             else:
-                raise RuntimeError("[SceneManager::remove_connector] Invalid pointer")
+                raise RuntimeError("[SceneManager::remove_connector] 无效的连接器。")
 
         # 有效性检查
         assert 0 <= connector_index < len(self.m_network.m_connectors)
@@ -650,11 +676,11 @@ class SceneManager(QGraphicsScene):
         if self.m_currently_connecting:
             if (
                 self.m_block_items
-                and self.m_block_items[-1].block().m_name == Globals.InvisibleLabel
+                and self.m_block_items[-1].block.m_name == Globals.InvisibleLabel
             ):
                 p = self.m_block_items[-1].pos()
                 for bi in self.m_block_items:
-                    if bi.block().m_name == Globals.InvisibleLabel:
+                    if bi.block.m_name == Globals.InvisibleLabel:
                         continue
                     # 重置所有插槽状态
                     for si in bi.m_socket_items:
@@ -665,9 +691,7 @@ class SceneManager(QGraphicsScene):
                         bi.inlet_socket_accepting_connection(p)
                     )
                     if socket_item is not None:
-                        if not self.is_connected_socket(
-                            bi.block(), socket_item.socket()
-                        ):
+                        if not self.is_connected_socket(bi.block, socket_item.socket):
                             socket_item.m_hovered = True
                             socket_item.update()
         super().mouseMoveEvent(mouse_event)
@@ -689,21 +713,21 @@ class SceneManager(QGraphicsScene):
             if self.m_currently_connecting:
                 if (
                     self.m_block_items
-                    and self.m_block_items[-1].block().m_name == Globals.InvisibleLabel
+                    and self.m_block_items[-1].block.m_name == Globals.InvisibleLabel
                 ):
                     p = self.m_block_items[-1].pos()
                     for bi in self.m_block_items:
-                        if bi.block().m_name == Globals.InvisibleLabel:
+                        if bi.block.m_name == Globals.InvisibleLabel:
                             continue
 
                         # 查找可以连接的插槽
                         si = bi.inlet_socket_accepting_connection(p)
-                        if si and not self.is_connected_socket(bi.block(), si.socket()):
+                        if si and not self.is_connected_socket(bi.block, si.socket):
                             # 找到目标插槽，记录起始插槽和目标插槽
                             start_socket = self.m_network.m_connectors[
                                 -1
                             ].m_source_socket
-                            target_socket = f"{bi.block().m_name}.{si.socket().m_name}"
+                            target_socket = f"{bi.block.m_name}.{si.socket.m_name}"
                             break
 
             self.finish_connection()
@@ -787,9 +811,9 @@ class SceneManager(QGraphicsScene):
                 end_line = block.socket_start_line(socket)  # 覆盖默认值
 
             if start_line.isNull():
-                raise ValueError("Source socket not found or invalid")
+                raise ValueError("源插槽未找到或无效。")
             if end_line.isNull():
-                raise ValueError("Target socket not found or invalid")
+                raise ValueError("目标插槽未找到或无效。")
 
             # 创建起始和结束线段
             item = self.create_connector_item(con)
@@ -819,7 +843,7 @@ class SceneManager(QGraphicsScene):
                 start = next_point
 
         except Exception as e:
-            print(f"Error creating connector items: {e}")
+            print(f"创建连接器图形项时出错: {e}")
             for item in new_conns:
                 item.deleteLater()
             new_conns.clear()
@@ -940,16 +964,16 @@ class SceneManager(QGraphicsScene):
                 start_line = source_block.socket_start_line(source_socket)
                 start_segment.setLine(start_line)
             else:
-                raise ValueError("Source socket not found")
+                raise ValueError("源插槽未找到或无效。")
 
             # 更新结束线段（目标插槽）
             if target_block and target_socket:
                 end_line = target_block.socket_start_line(target_socket)
                 end_segment.setLine(end_line)
             else:
-                raise ValueError("Target socket not found")
+                raise ValueError("目标插槽未找到或无效。")
 
-            # 更新中间线段（保持与C++相同的逻辑）
+            # 更新中间线段
             start = start_line.p2()
             for i, seg in enumerate(con.m_segments):
                 item = segment_items[i]
@@ -963,4 +987,4 @@ class SceneManager(QGraphicsScene):
                 start = next_point
 
         except Exception as e:
-            print(f"Error updating connector segments: {e}")
+            print(f"更新连接器线段时出错: {e}")
