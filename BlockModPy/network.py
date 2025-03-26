@@ -380,10 +380,12 @@ class Network:
         Raises:
             RuntimeError: 如果名称格式无效。
         """
-        parts = flat_name.split(".")
-        if len(parts) != 2:
-            raise RuntimeError(f"Bad flat name '{flat_name}', missing '.' character.")
-        return parts[0].strip(), parts[1].strip()
+        if "." not in flat_name:
+            raise RuntimeError(
+                f"Bad flat name '{flat_name}', expected 'block.socket' format."
+            )
+        dot_index = flat_name.index(".")
+        return flat_name[:dot_index].strip(), flat_name[dot_index + 1 :].strip()
 
     def _read_blocks(self, reader: QXmlStreamReader) -> None:
         """从 XML 读取块数据。
