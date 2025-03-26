@@ -75,6 +75,7 @@ class BlockItem(QGraphicsRectItem):
             block: 关联的块对象。
             parent: 父项，默认为 None。
         """
+        from .socket_item import SocketItem
 
         super().__init__(parent)
         self.m_block: Block = block
@@ -88,7 +89,16 @@ class BlockItem(QGraphicsRectItem):
         )
         self.setZValue(10)
 
+        # 初始化尺寸
+        initial_width = self.m_block.m_size.width()
+        initial_height = self.m_block.m_size.height()
+        self.resize(int(initial_width), int(initial_height))
+
         self.create_socket_items()
+
+    @property
+    def block(self) -> Block:
+        return self.m_block
 
     def inlet_socket_accepting_connection(
         self, scene_pos: QPointF
@@ -102,7 +112,7 @@ class BlockItem(QGraphicsRectItem):
             如果找到接受连接的插槽项，返回该插槽项，否则返回 None。
         """
         for socket_item in self.m_socket_items:
-            socket_scene_pos = socket_item.mapToScene(socket_item.socket().m_pos)
+            socket_scene_pos = socket_item.mapToScene(socket_item.socket.m_pos)
             socket_scene_pos -= scene_pos
             distance = socket_scene_pos.manhattanLength()
             if distance < Globals.GridSpacing / 2:
@@ -147,7 +157,9 @@ class BlockItem(QGraphicsRectItem):
         Returns:
             块的边界矩形。
         """
-        return super().boundingRect()
+        rect = super().boundingRect()
+
+        return rect
 
     def create_socket_items(self) -> None:
         """创建插槽项。"""
