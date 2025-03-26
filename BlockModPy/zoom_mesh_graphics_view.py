@@ -37,7 +37,7 @@
 import math
 from typing import List, Optional
 
-from qtpy.QtCore import QPointF, QSize, QLineF, QEvent
+from qtpy.QtCore import QPointF, QSize, QLineF, QEvent, Qt
 from qtpy.QtGui import (
     QPainter,
     QColor,
@@ -73,6 +73,10 @@ class ZoomMeshGraphicsView(QGraphicsView):
 
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
+
+        # 中键拖拽相关成员变量
+        self.m_midButtonPressed = False
+        self.m_dragStartPos = QPointF()
 
     def zoom_level(self) -> int:
         """获取当前缩放级别。
@@ -152,7 +156,7 @@ class ZoomMeshGraphicsView(QGraphicsView):
         self.m_resolution = res
         self.viewport().update()
 
-    def enter_event(self, event: QEvent) -> None:
+    def enterEvent(self, event: QEvent) -> None:
         """处理鼠标进入事件。
 
         Args:
@@ -160,7 +164,7 @@ class ZoomMeshGraphicsView(QGraphicsView):
         """
         super().enterEvent(event)
 
-    def leave_event(self, event: QEvent) -> None:
+    def leaveEvent(self, event: QEvent) -> None:
         """处理鼠标离开事件。
 
         Args:
@@ -168,17 +172,44 @@ class ZoomMeshGraphicsView(QGraphicsView):
         """
         super().leaveEvent(event)
 
-    def mouse_move_event(self, event: QMouseEvent) -> None:
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MiddleButton:
+            self.m_midButtonPressed = True
+            self.m_dragStartPos = event.pos()
+            self.setCursor(Qt.ClosedHandCursor)
+        else:
+            super().mousePressEvent(event)
+        event.accept()
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """处理鼠标移动事件。
 
         Args:
             event: 鼠标事件对象。
         """
-        super().mouseMoveEvent(event)
-        self.m_pos = self.mapToScene(event.pos())
-        self.viewport().update()
+        if self.m_midButtonPressed:
+            current_pos = event.pos()
+            dx = self.m_dragStartPos.x() - current_pos.x()
+            dy = self.m_dragStartPos.y() - current_pos.y()
+            # 使用滚动条直接控制视口移动
+            h_scroll = self.horizontalScrollBar()
+            v_scroll = self.verticalScrollBar()
+            h_scroll.setValue(int(h_scroll.value() + dx))
+            v_scroll.setValue(int(v_scroll.value() + dy))
+            self.m_dragStartPos = current_pos  # 更新初始位置
+        else:
+            super().mouseMoveEvent(event)
+        event.accept()
 
-    def wheel_event(self, event: QWheelEvent) -> None:
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MiddleButton:
+            self.m_midButtonPressed = False
+            self.setCursor(Qt.ArrowCursor)
+        else:
+            super().mouseReleaseEvent(event)
+        event.accept()
+
+    def wheelEvent(self, event: QWheelEvent) -> None:
         """处理鼠标滚轮事件。
 
         Args:
@@ -190,7 +221,7 @@ class ZoomMeshGraphicsView(QGraphicsView):
             self.zoom_in()
         event.accept()
 
-    def paint_event(self, event: QPaintEvent) -> None:
+    def paintEvent(self, event: QPaintEvent) -> None:
         """绘制网格。
 
         Args:
