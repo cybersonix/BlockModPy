@@ -261,6 +261,8 @@ class BlockItem(QGraphicsRectItem):
             处理后的值。
         """
         if change == QGraphicsRectItem.ItemPositionChange:
+            from .scene_manager import SceneManager
+
             scene_manager = self.scene()
 
             # 类型安全处理，确保 value 是 QPointF 类型
@@ -280,20 +282,22 @@ class BlockItem(QGraphicsRectItem):
 
             if self.m_block.m_pos != pos.toPoint():
                 self.m_moved = True
-                old_pos = self.m_block.m_pos
+                # old_pos = self.m_block.m_pos
                 self.m_block.m_pos = pos.toPoint()
-                if scene_manager:
-                    scene_manager.block_moved(self.m_block, old_pos)
+                if isinstance(scene_manager, SceneManager):
+                    scene_manager.block_moved(self.m_block)
 
-            if scene_manager:
-                scene_rect = scene_manager.sceneRect()
-                if (
-                    pos.x() < scene_rect.left()
-                    or pos.y() < scene_rect.top()
-                    or (pos.x() + self.rect().width()) > scene_rect.right()
-                    or (pos.y() + self.rect().height()) > scene_rect.bottom()
-                ):
-                    scene_manager.setSceneRect(QRectF())
+            if not isinstance(scene_manager, SceneManager):
+                return pos
+
+            scene_rect = scene_manager.sceneRect()
+            if (
+                pos.x() < scene_rect.left()
+                or pos.y() < scene_rect.top()
+                or (pos.x() + self.rect().width()) > scene_rect.right()
+                or (pos.y() + self.rect().height()) > scene_rect.bottom()
+            ):
+                scene_manager.setSceneRect(QRectF())
 
             return pos
 
