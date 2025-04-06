@@ -154,7 +154,7 @@ class ConnectorSegmentItem(QGraphicsLineItem):
 
         painter.restore()
 
-    def hover_enter_event(self, event: QGraphicsSceneHoverEvent) -> None:
+    def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """处理鼠标悬停进入事件。
 
         Args:
@@ -177,7 +177,7 @@ class ConnectorSegmentItem(QGraphicsLineItem):
         if isinstance(scene_manager, SceneManager):
             scene_manager.highlight_connector_segments(self.m_connector, True)
 
-    def hover_leave_event(self, event: QGraphicsSceneHoverEvent) -> None:
+    def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """处理鼠标悬停离开事件。
 
         Args:
@@ -195,7 +195,7 @@ class ConnectorSegmentItem(QGraphicsLineItem):
         if isinstance(scene_manager, SceneManager):
             scene_manager.highlight_connector_segments(self.m_connector, False)
 
-    def mouse_press_event(self, event: QGraphicsSceneMouseEvent) -> None:
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """处理鼠标按下事件。
 
         Args:
@@ -207,7 +207,7 @@ class ConnectorSegmentItem(QGraphicsLineItem):
         self.setSelected(True)
         super().mousePressEvent(event)
 
-    def mouse_release_event(self, event: QGraphicsSceneMouseEvent) -> None:
+    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """处理鼠标释放事件。
 
         Args:
@@ -238,7 +238,7 @@ class ConnectorSegmentItem(QGraphicsLineItem):
             scene_manager.merge_connector_segments(self.m_connector)
             scene_manager.on_selection_changed()
 
-    def item_change(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
+    def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
         """处理图形项属性变更事件。
 
         Args:
