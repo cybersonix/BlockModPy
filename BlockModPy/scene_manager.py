@@ -203,7 +203,7 @@ class SceneManager(QGraphicsScene):
                 return item
         return None
 
-    def block_moved(self, block: Block, old_pos: QPointF) -> None:
+    def block_moved(self, block: Block) -> None:
         """处理块移动后的相关操作。
 
         当块发生移动时，此函数会被调用，用于更新与该块相关的连接器及其显示。
@@ -215,11 +215,10 @@ class SceneManager(QGraphicsScene):
 
         Args:
             block: 移动的块对象。
-            old_pos: 移动前的原始坐标，用于连接器调整计算。
         """
         cons = self.m_block_connector_map.get(block, set())
         for con in cons:
-            self.m_network.adjust_connector(con, old_pos)
+            self.m_network.adjust_connector(con)
             self.update_connector_segment_items(con, None)
         self.network_geometry_changed.emit()
 
@@ -412,15 +411,15 @@ class SceneManager(QGraphicsScene):
         dummy_block = Block()
         dummy_block.m_pos = mouse_pos
         dummy_block.m_size = QSizeF(20, 20)
-        dummy_block.m_name = Globals.InvisibleLabel.strip()
+        dummy_block.m_name = Globals.InvisibleLabel
         dummy_block.m_connection_helper_block = True
 
         # 创建一个虚拟插槽，用于表示连接的目标
         dummy_socket = Socket()
-        dummy_socket.m_name = Globals.InvisibleLabel.strip()
+        dummy_socket.m_name = Globals.InvisibleLabel
         dummy_socket.m_inlet = True
-        dummy_socket.m_orientation = Qt.Vertical
-        dummy_socket.m_pos = QPointF(10, 10)
+        dummy_socket.m_orientation = Qt.Horizontal
+        dummy_socket.m_pos = QPointF(0, 0)
         dummy_block.m_sockets.append(dummy_socket)
 
         # 将虚拟块添加到网络中
@@ -437,13 +436,18 @@ class SceneManager(QGraphicsScene):
         self.m_network.m_connectors.append(con)
 
         # 创建虚拟块的图形项，并添加到场景中
-        bi = self.create_block_item(self.m_network.m_blocks[-1])  # type: ignore
+        bi = self.create_block_item(self.m_network.m_blocks[-1])
         bi.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
         bi.setPos(dummy_block.m_pos)
-        view = self.views()[0]
-        bi.setPos(view.mapToScene(mouse_pos.toPoint()))
 
         self.m_block_items.append(bi)
+        bi.setFlags(
+            QGraphicsItem.ItemIsMovable
+            | QGraphicsItem.ItemIsSelectable
+            | QGraphicsItem.ItemSendsGeometryChanges
+        )
+        bi.setPos(dummy_block.m_pos)
+
         self.addItem(bi)
 
         # 创建连接器的图形项，并添加到场景中
@@ -645,7 +649,7 @@ class SceneManager(QGraphicsScene):
         # 删除连接器数据
         del self.m_network.m_connectors[connector_index]
 
-    def mouse_press_event(self, mouse_event) -> None:
+    def mousePressEvent(self, mouse_event) -> None:
         """处理鼠标按下事件。
 
         如果当前正在连接中，捕获鼠标事件以继续连接操作。
@@ -665,7 +669,7 @@ class SceneManager(QGraphicsScene):
         if not already_in_connection_process and in_connection_process:
             self.m_block_items[-1].grabMouse()
 
-    def mouse_move_event(self, mouse_event) -> None:
+    def mouseMoveEvent(self, mouse_event) -> None:
         """处理鼠标移动事件。
 
         如果当前正在连接中，更新虚拟块的位置，并检查是否有可用的目标插槽。
@@ -675,7 +679,7 @@ class SceneManager(QGraphicsScene):
         """
         if self.m_currently_connecting:
             if (
-                self.m_block_items
+                self.m_block_items.__len__() > 0
                 and self.m_block_items[-1].block.m_name == Globals.InvisibleLabel
             ):
                 p = self.m_block_items[-1].pos()
@@ -686,17 +690,15 @@ class SceneManager(QGraphicsScene):
                     for si in bi.m_socket_items:
                         si.m_hovered = False
                         si.update()
-                    # 安全类型处理
-                    socket_item: Optional[SocketItem] = (
-                        bi.inlet_socket_accepting_connection(p)
-                    )
+
+                    socket_item = bi.inlet_socket_accepting_connection(p)
                     if socket_item is not None:
                         if not self.is_connected_socket(bi.block, socket_item.socket):
                             socket_item.m_hovered = True
                             socket_item.update()
         super().mouseMoveEvent(mouse_event)
 
-    def mouse_release_event(self, mouse_event: QGraphicsSceneMouseEvent) -> None:
+    def mouseReleaseEvent(self, mouse_event: QGraphicsSceneMouseEvent) -> None:
         """处理鼠标释放事件。
 
         如果当前正在连接中，完成连接操作。
@@ -800,20 +802,19 @@ class SceneManager(QGraphicsScene):
             end_line = QLineF()  # 默认空线段
 
             # 查找源插槽和目标插槽
-            block, socket = self.m_network.lookup_block_and_socket(con.m_source_socket)
-            if block and socket:
-                self.m_block_connector_map.setdefault(block, set()).add(con)
-                start_line = block.socket_start_line(socket)  # 覆盖默认值
+            source_block, source_socket = self.m_network.lookup_block_and_socket(
+                con.m_source_socket
+            )
+            if source_block and source_socket:
+                self.m_block_connector_map.setdefault(source_block, set()).add(con)
+                start_line = source_block.socket_start_line(source_socket)
 
-            block, socket = self.m_network.lookup_block_and_socket(con.m_target_socket)
-            if block and socket:
-                self.m_block_connector_map.setdefault(block, set()).add(con)
-                end_line = block.socket_start_line(socket)  # 覆盖默认值
-
-            if start_line.isNull():
-                raise ValueError("源插槽未找到或无效。")
-            if end_line.isNull():
-                raise ValueError("目标插槽未找到或无效。")
+            target_block, target_socket = self.m_network.lookup_block_and_socket(
+                con.m_target_socket
+            )
+            if target_block and target_socket:
+                self.m_block_connector_map.setdefault(target_block, set()).add(con)
+                end_line = target_block.socket_start_line(target_socket)  # 覆盖默认值
 
             # 创建起始和结束线段
             item = self.create_connector_item(con)
