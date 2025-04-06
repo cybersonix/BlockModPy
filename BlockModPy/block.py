@@ -162,28 +162,22 @@ class Block:
             start_point = socket.m_pos + self.m_pos
             return QLineF(start_point, start_point)
 
-        # 根据插座方向计算基础位置
-        if socket.m_orientation == Qt.Horizontal:
-            base_x = 0 if socket.m_inlet else self.m_size.width()
-            direction = -1 if socket.m_inlet else 1
-            base_pos = QPointF(base_x, self.m_size.height() / 2)
-            end_offset = QPointF(Globals.GridSpacing * 2 * direction, 0)
-        else:
-            if socket.m_inlet:
-                # 入口插座位于顶部
-                base_y = 0
-                direction = -1
-            else:
-                # 出口插座位于底部
-                base_y = self.m_size.height()
-                direction = 1
-            base_pos = QPointF(self.m_size.width() / 2, base_y)
-            end_offset = QPointF(0, Globals.GridSpacing * 2 * direction)
+        start_point = socket.m_pos + self.m_pos
+        other_point = socket.m_pos
 
-            # 转换为场景坐标
-        start_point = base_pos + self.m_pos
-        end_point = base_pos + end_offset + self.m_pos
-        return QLineF(start_point, end_point)
+        # 根据插座的实际方向计算偏移
+        direction = socket.direction()  # 假设 Python Socket 类添加 direction 属性
+        if direction == Socket.Direction.Left:
+            other_point += QPointF(-2 * Globals.GridSpacing, 0)
+        elif direction == Socket.Direction.Right:
+            other_point += QPointF(2 * Globals.GridSpacing, 0)
+        elif direction == Socket.Direction.Top:
+            other_point += QPointF(0, -2 * Globals.GridSpacing)
+        elif direction == Socket.Direction.Bottom:
+            other_point += QPointF(0, 2 * Globals.GridSpacing)
+
+        other_point += self.m_pos
+        return QLineF(start_point, other_point + self.m_pos)
 
     def find_socket_insert_position(self, inlet_socket: bool) -> Tuple[int, int]:
         """计算新插槽的插入位置坐标。
