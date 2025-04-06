@@ -36,7 +36,10 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .block_item import BlockItem
 
 from qtpy.QtCore import Qt, QRectF, QPointF
 from qtpy.QtGui import (
@@ -63,8 +66,6 @@ from .socket import Socket
 
 
 class SocketItem(QGraphicsItem):
-    from .block_item import BlockItem
-
     """SocketItem 类，表示图形场景中的插槽项，负责绘制插槽并处理相关事件。"""
 
     def __init__(self, parent: BlockItem, socket: Socket) -> None:
@@ -137,13 +138,20 @@ class SocketItem(QGraphicsItem):
         # elif self.m_socket.direction() == Socket.Direction.Top:
         #     rect.moveTop(rect.top() - text_bounding_rect.width() - 6)
         # elif self.m_socket.direction() == Socket.Direction.Bottom:
-        #     rect.setHeight(6)
         #     rect.setHeight(rect.height() + text_bounding_rect.width() + 6)
 
         return rect
 
     def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """处理鼠标悬停进入事件。
+
+        Notes:
+            对于输出插槽，允许悬停的条件是：
+            - 场景当前不在连接模式
+
+            对于输入插槽，仅允许在以下条件满足时允许悬停：
+            - 场景处于连接模式
+            - 插槽未被占用
 
         Args:
             event: 鼠标悬停事件对象。
@@ -188,8 +196,6 @@ class SocketItem(QGraphicsItem):
             option: 样式选项。
             widget: 绘制目标部件，默认为 None。
         """
-        from .scene_manager import SceneManager
-
         if (
             self.parentItem()
             and self.parentItem().m_block.m_name == Globals.InvisibleLabel
@@ -222,6 +228,8 @@ class SocketItem(QGraphicsItem):
                 painter.drawPie(rect, 0 * 16, 180 * 16)
                 painter.setPen(Qt.black)
                 painter.drawArc(rect, 0 * 16, 180 * 16)
+
+            from .scene_manager import SceneManager
 
             scene_manager = self.scene()
             if isinstance(
@@ -323,16 +331,17 @@ class SocketItem(QGraphicsItem):
         Args:
             event: 鼠标事件对象。
         """
-        from .scene_manager import SceneManager
-
         if (
             not self.m_socket.m_inlet
             and event.button() == Qt.LeftButton
             and event.modifiers() == Qt.NoModifier
         ):
+            from .scene_manager import SceneManager
+
             scene_manager = self.scene()
             if isinstance(scene_manager, SceneManager):
                 pos = event.pos()
                 pos = self.mapToScene(pos)
                 scene_manager.start_socket_connection(self, pos)
+                event.accept()
         super().mousePressEvent(event)
