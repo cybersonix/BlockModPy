@@ -163,7 +163,7 @@ class Block:
             return QLineF(start_point, start_point)
 
         start_point = socket.m_pos + self.m_pos
-        other_point = socket.m_pos
+        other_point = socket.m_pos + self.m_pos
 
         # 根据插座的实际方向计算偏移
         direction = socket.direction()  # 假设 Python Socket 类添加 direction 属性
@@ -176,8 +176,7 @@ class Block:
         elif direction == Socket.Direction.Bottom:
             other_point += QPointF(0, 2 * Globals.GridSpacing)
 
-        other_point += self.m_pos
-        return QLineF(start_point, other_point + self.m_pos)
+        return QLineF(start_point, other_point)
 
     def find_socket_insert_position(self, inlet_socket: bool) -> Tuple[int, int]:
         """计算新插槽的插入位置坐标。
