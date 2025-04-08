@@ -162,9 +162,11 @@ class ConnectorSegmentItem(QGraphicsLineItem):
         """
         super().hoverEnterEvent(event)
         scene_manager = self.scene()
+        from .scene_manager import SceneManager
+
         if (
             isinstance(scene_manager, SceneManager)
-            and scene_manager.is_currently_connecting()
+            and scene_manager.is_currently_connecting
         ):
             return
 
@@ -185,9 +187,11 @@ class ConnectorSegmentItem(QGraphicsLineItem):
         """
         super().hoverLeaveEvent(event)
         scene_manager = self.scene()
+        from .scene_manager import SceneManager
+
         if (
             isinstance(scene_manager, SceneManager)
-            and scene_manager.is_currently_connecting()
+            and scene_manager.is_currently_connecting
         ):
             return
 
@@ -202,6 +206,8 @@ class ConnectorSegmentItem(QGraphicsLineItem):
             event: 鼠标事件对象。
         """
         scene_manager = self.scene()
+        from .scene_manager import SceneManager
+
         if isinstance(scene_manager, SceneManager):
             scene_manager.clear_selection()
         self.setSelected(True)
@@ -217,6 +223,8 @@ class ConnectorSegmentItem(QGraphicsLineItem):
             self.setSelected(True)
             event.accept()
             scene_manager = self.scene()
+            from .scene_manager import SceneManager
+
             if isinstance(scene_manager, SceneManager):
                 scene_manager.on_selection_changed()
             return
@@ -226,6 +234,8 @@ class ConnectorSegmentItem(QGraphicsLineItem):
             self.setSelected(True)
             event.accept()
             scene_manager = self.scene()
+            from .scene_manager import SceneManager
+
             if isinstance(scene_manager, SceneManager):
                 scene_manager.on_selection_changed()
             self.update()
@@ -234,6 +244,8 @@ class ConnectorSegmentItem(QGraphicsLineItem):
         super().mouseReleaseEvent(event)
         self.m_moved = False
         scene_manager = self.scene()
+        from .scene_manager import SceneManager
+
         if isinstance(scene_manager, SceneManager):
             scene_manager.merge_connector_segments(self.m_connector)
             scene_manager.on_selection_changed()
@@ -263,6 +275,8 @@ class ConnectorSegmentItem(QGraphicsLineItem):
 
                 # Manually correct the line's coordinates
                 scene_manager = self.scene()
+                from .scene_manager import SceneManager
+
                 if isinstance(scene_manager, SceneManager):
                     scene_manager.connector_segment_moved(self)
 
