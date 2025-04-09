@@ -464,7 +464,7 @@ class SceneManager(QGraphicsScene):
 
         如果当前正在连接中，移除虚拟块并结束连接状态。
         """
-        if self.m_network.m_blocks and self.m_network.m_blocks[-1].m_name == Globals.InvisibleLabel:  # type: ignore
+        if self.m_network.m_blocks and self.m_network.m_blocks[-1].m_name == Globals.InvisibleLabel:
             self.remove_block(len(self.m_network.m_blocks) - 1)
         self.m_currently_connecting = False
 
@@ -548,9 +548,8 @@ class SceneManager(QGraphicsScene):
             block_index = block
             block_to_remove = self.m_network.m_blocks[block_index]
         else:
-            # 遍历查找目标块
             for idx, b in enumerate(self.m_network.m_blocks):
-                if b is block:  # 使用is进行对象身份比较
+                if b is block:
                     block_index = idx
                     block_to_remove = b
                     break
@@ -561,43 +560,43 @@ class SceneManager(QGraphicsScene):
         assert 0 <= block_index < len(self.m_network.m_blocks)
         assert block_index < len(self.m_block_items)
 
-        # 移除相关连接器
-        related_connectors = self.m_block_connector_map.get(block_to_remove, set())
+        # 获取与该块相关的所有连接器
+        related_connectors = list(self.m_block_connector_map.get(block_to_remove, set()))
+
+        # 删除所有相关连接器
         for con in related_connectors:
-            # 在连接器列表中查找并移除
-            for i in reversed(range(len(self.m_network.m_connectors))):
-                if self.m_network.m_connectors[i] is con:
-                    del self.m_network.m_connectors[i]
-                    break
+            if con in self.m_network.m_connectors:
+                self.m_network.m_connectors.remove(con)
 
-        # 清理块关联数据
-        # 只删除当前块的映射条目（关键修正点）
-        if block_to_remove in self.m_block_connector_map:
-            del self.m_block_connector_map[block_to_remove]
-
-        # 移除图形项
-        # 删除块图形项
+        # 从块列表中删除该块
         block_item = self.m_block_items.pop(block_index)
         self.removeItem(block_item)
-        # 删除块数据
         del self.m_network.m_blocks[block_index]
 
-        # 更新剩余连接器
-        # 直接删除相关连接器图形项（优化点）
-        connectors_to_keep = [
-            con for con in self.m_network.m_connectors if con not in related_connectors
-        ]
-        # 清空并重建连接器
-        for item in self.m_connector_segment_items:
+        # 清空连接器项并重建
+        # 移除所有连接器图形项
+        while self.m_connector_segment_items:
+            item = self.m_connector_segment_items.pop()
             self.removeItem(item)
-        self.m_connector_segment_items.clear()
+            del item
 
-        # 重建有效连接器的图形项
-        for con in connectors_to_keep:
-            new_items = self.create_connector_items(con)
-            self.m_connector_segment_items.extend(new_items)
+        # 完全重建 m_block_connector_map
+        self.m_block_connector_map.clear()
+        for con in self.m_network.m_connectors:
+            # 更新源块的连接器关联
+            source_block, _ = self.m_network.lookup_block_and_socket(con.m_source_socket)
+            self.m_block_connector_map.setdefault(source_block, set()).add(con)
+            # 更新目标块的连接器关联
+            target_block, _ = self.m_network.lookup_block_and_socket(con.m_target_socket)
+            self.m_block_connector_map.setdefault(target_block, set()).add(con)
+
+        # 重新创建所有剩余连接器的图形项
+        self.m_connector_segment_items.clear()
+        for connector in self.m_network.m_connectors:
+            new_items = self.create_connector_items(connector)
             for item in new_items:
                 self.addItem(item)
+                self.m_connector_segment_items.append(item)
 
     def remove_connector(self, con: Union[Connector, int]) -> None:
         """从网络中移除一个连接器。
@@ -672,7 +671,7 @@ class SceneManager(QGraphicsScene):
     def mouseMoveEvent(self, mouse_event) -> None:
         """处理鼠标移动事件。
 
-        如果当前正在连接中，更新虚拟块的位置，并检查是否有可用的目标插槽。
+        如果当前正在连接中，检查是否有可用的目标插槽。
 
         Args:
             mouse_event: 鼠标事件对象。
@@ -726,9 +725,7 @@ class SceneManager(QGraphicsScene):
                         si = bi.inlet_socket_accepting_connection(p)
                         if si and not self.is_connected_socket(bi.block, si.socket):
                             # 找到目标插槽，记录起始插槽和目标插槽
-                            start_socket = self.m_network.m_connectors[
-                                -1
-                            ].m_source_socket
+                            start_socket = self.m_network.m_connectors[-1].m_source_socket
                             target_socket = f"{bi.block.m_name}.{si.socket.m_name}"
                             break
 
