@@ -186,8 +186,10 @@ class BlockItem(QGraphicsRectItem):
             option: 样式选项。
             widget: 绘制目标部件，默认为 None。
         """
-        if self.is_invisible():
-            return
+
+        # 注释掉这里的语句，可以显示被隐藏的 dummy_block 隐藏块，用于调试
+        # if self.is_invisible():
+        #     return
 
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, True)
@@ -269,14 +271,14 @@ class BlockItem(QGraphicsRectItem):
             if not isinstance(value, QPointF):
                 return super().itemChange(change, value)
 
-            pos = value
+            pos = QPointF(0, 0)
 
             pos.setX(
-                int((pos.x() + 0.5 * Globals.GridSpacing) / Globals.GridSpacing)
+                int((value.x() + 0.5 * Globals.GridSpacing) / Globals.GridSpacing)
                 * Globals.GridSpacing
             )
             pos.setY(
-                int((pos.y() + 0.5 * Globals.GridSpacing) / Globals.GridSpacing)
+                int((value.y() + 0.5 * Globals.GridSpacing) / Globals.GridSpacing)
                 * Globals.GridSpacing
             )
 
