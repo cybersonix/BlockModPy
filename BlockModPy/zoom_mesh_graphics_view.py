@@ -227,6 +227,7 @@ class ZoomMeshGraphicsView(QGraphicsView):
         Args:
             event: 绘制事件对象。
         """
+
         if self.m_grid_enabled:
             p = QPainter(self.viewport())
             p1 = self.mapFromScene(QPointF(0, 0))
@@ -299,6 +300,11 @@ class ZoomMeshGraphicsView(QGraphicsView):
             # 绘制主网格
             p.setPen(self.m_grid_color)
             p.drawLines(self.m_major_grid)
+
+            # 绘制参考线用于调试
+            p.setPen(QColor(255, 0, 0))
+            p.drawLine(p1.x() - 5000, p1.y(), p1.x() + 5000, p1.y())  # 水平线
+            p.drawLine(p1.x(), p1.y() - 5000, p1.x(), p1.y() + 5000)  # 垂直线
 
         super().paintEvent(event)
 
