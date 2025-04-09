@@ -45,7 +45,7 @@ from BlockModPy.globals import Globals
 from BlockModPy.network import Network
 from BlockModPy.scene_manager import SceneManager
 from BlockModPy.socket import Socket
-from .ui.dialog import Ui_BlockModPyDemoDialog  # 导入自动生成的UI类
+from ui.dialog import Ui_BlockModPyDemoDialog  # 导入自动生成的UI类
 
 
 class DialogDemo(QDialog, Ui_BlockModPyDemoDialog):
