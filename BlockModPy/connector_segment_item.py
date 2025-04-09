@@ -209,7 +209,7 @@ class ConnectorSegmentItem(QGraphicsLineItem):
         from .scene_manager import SceneManager
 
         if isinstance(scene_manager, SceneManager):
-            scene_manager.clear_selection()
+            scene_manager.clearSelection()
         self.setSelected(True)
         super().mousePressEvent(event)
 
@@ -261,7 +261,7 @@ class ConnectorSegmentItem(QGraphicsLineItem):
             变更后的值。
         """
         if change == QGraphicsItem.ItemPositionChange and self.m_segment_idx >= 0:
-            pos_f = value.toPointF()
+            pos_f = value
             pos_f.setX(int(pos_f.x() / Globals.GridSpacing) * Globals.GridSpacing)
             pos_f.setY(int(pos_f.y() / Globals.GridSpacing) * Globals.GridSpacing)
             pos = pos_f.toPoint()
