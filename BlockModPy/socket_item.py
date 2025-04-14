@@ -344,4 +344,3 @@ class SocketItem(QGraphicsItem):
                 pos = self.mapToScene(pos)
                 scene_manager.start_socket_connection(self, pos)
                 event.accept()
-        super().mousePressEvent(event)

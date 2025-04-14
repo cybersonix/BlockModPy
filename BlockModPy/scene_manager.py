@@ -871,10 +871,12 @@ class SceneManager(QGraphicsScene):
                 if item.m_connector in selected_connectors:
                     item.setSelected(True)
             # 发出信号，表示选中了连接器
-            self.new_connector_selected.emit(
-                selected_connectors.pop().m_source_socket,
-                selected_connectors.pop().m_target_socket,
-            )
+            # self.new_connector_selected.emit(
+            #     selected_connectors.pop().m_source_socket,
+            #     selected_connectors.pop().m_target_socket,
+            # )
+            con = selected_connectors.pop()
+            self.new_connector_selected.emit(con.m_source_socket, con.m_target_socket)
 
     def block_double_clicked(self, block_item: BlockItem) -> None:
         """处理块双击事件。
@@ -926,10 +928,12 @@ class SceneManager(QGraphicsScene):
             items_needed -= 1
 
         while len(segment_items) > items_needed:
-            item = segment_items.pop()
-            self.m_connector_segment_items.remove(item)
-            item.deleteLater()
+            item = segment_items[-1]
+            if item in self.m_connector_segment_items:
+                self.m_connector_segment_items.remove(item)
+                segment_items.pop()
 
+        # 【高亮逻辑】
         # 添加缺失的线段图形项
         for i in range(len(segment_items), items_needed):
             item = self.create_connector_item(con)
@@ -960,6 +964,8 @@ class SceneManager(QGraphicsScene):
             # 更新起始线段（源插槽）
             if source_block and source_socket:
                 start_line = source_block.socket_start_line(source_socket)
+                pos = start_segment.pos()
+                start_line.translate(-pos)
                 start_segment.setLine(start_line)
             else:
                 raise ValueError("源插槽未找到或无效。")
@@ -967,6 +973,8 @@ class SceneManager(QGraphicsScene):
             # 更新结束线段（目标插槽）
             if target_block and target_socket:
                 end_line = target_block.socket_start_line(target_socket)
+                pos = end_segment.pos()
+                end_line.translate(-pos)
                 end_segment.setLine(end_line)
             else:
                 raise ValueError("目标插槽未找到或无效。")
@@ -980,7 +988,10 @@ class SceneManager(QGraphicsScene):
                     if seg.m_direction == Qt.Horizontal
                     else start + QPointF(0, seg.m_offset)
                 )
-                item.setLine(QLineF(start, next_point))
+                new_line = QLineF(start, next_point)
+                pos = item.pos()
+                new_line.translate(-pos)
+                item.set_line(new_line)
                 item.m_segment_idx = i
                 start = next_point
 

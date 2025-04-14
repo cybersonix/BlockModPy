@@ -160,7 +160,7 @@ class ConnectorSegmentItem(QGraphicsLineItem):
         Args:
             event: 鼠标悬停事件对象。
         """
-        super().hoverEnterEvent(event)
+        QGraphicsItem.hoverEnterEvent(self, event)
         scene_manager = self.scene()
         from .scene_manager import SceneManager
 
@@ -178,6 +178,7 @@ class ConnectorSegmentItem(QGraphicsLineItem):
 
         if isinstance(scene_manager, SceneManager):
             scene_manager.highlight_connector_segments(self.m_connector, True)
+        super().hoverEnterEvent(event)
 
     def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """处理鼠标悬停离开事件。
@@ -185,7 +186,7 @@ class ConnectorSegmentItem(QGraphicsLineItem):
         Args:
             event: 鼠标悬停事件对象。
         """
-        super().hoverLeaveEvent(event)
+        QGraphicsItem.hoverLeaveEvent(self, event)
         scene_manager = self.scene()
         from .scene_manager import SceneManager
 
@@ -198,6 +199,7 @@ class ConnectorSegmentItem(QGraphicsLineItem):
         QApplication.restoreOverrideCursor()
         if isinstance(scene_manager, SceneManager):
             scene_manager.highlight_connector_segments(self.m_connector, False)
+        super().hoverLeaveEvent(event)
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """处理鼠标按下事件。
@@ -328,9 +330,8 @@ class ConnectorSegmentItem(QGraphicsLineItem):
         seg_idx = self.m_segment_idx
 
         # Update segments to the left
-        while (seg_idx := seg_idx - 1) >= 0 and (
-            not Globals.near_zero(dx) or not Globals.near_zero(dy)
-        ):
+        while (seg_idx := seg_idx - 1) >= 0 and (seg_idx < len(self.m_connector.m_segments)) \
+                and (not Globals.near_zero(dx) or not Globals.near_zero(dy)):
             seg = self.m_connector.m_segments[seg_idx]
             if not Globals.near_zero(dx) and seg.m_direction == Qt.Horizontal:
                 seg.m_offset += dx
@@ -367,9 +368,8 @@ class ConnectorSegmentItem(QGraphicsLineItem):
         dy = move_dist.y()
         seg_idx = self.m_segment_idx
 
-        while (seg_idx := seg_idx + 1) < len(self.m_connector.m_segments) and (
-            not Globals.near_zero(dx) or not Globals.near_zero(dy)
-        ):
+        while (seg_idx := seg_idx + 1) < len(self.m_connector.m_segments) \
+                and (not Globals.near_zero(dx) or not Globals.near_zero(dy)):
             seg = self.m_connector.m_segments[seg_idx]
             if not Globals.near_zero(dx) and seg.m_direction == Qt.Horizontal:
                 seg.m_offset -= dx

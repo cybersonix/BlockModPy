@@ -37,6 +37,7 @@
 import math
 from typing import List, Optional
 
+from PySide2.QtWidgets import QApplication
 from qtpy.QtCore import QPointF, QSize, QLineF, QEvent, Qt
 from qtpy.QtGui import (
     QPainter,
@@ -48,6 +49,7 @@ from qtpy.QtGui import (
 )
 from qtpy.QtWidgets import QGraphicsView, QWidget
 
+from BlockModPy.scene_manager import SceneManager
 
 class ZoomMeshGraphicsView(QGraphicsView):
     """提供网格和缩放功能的 2D 图形视图类。"""
@@ -78,13 +80,13 @@ class ZoomMeshGraphicsView(QGraphicsView):
         self.m_midButtonPressed = False
         self.m_dragStartPos = QPointF()
 
-    def zoom_level(self) -> int:
-        """获取当前缩放级别。
-
-        Returns:
-            当前缩放级别。
-        """
-        return self.m_zoom_level
+    # def zoom_level(self) -> int:
+    #     """获取当前缩放级别。
+    #
+    #     Returns:
+    #         当前缩放级别。
+    #     """
+    #     return self.m_zoom_level
 
     def set_grid_color(self, color: QColor) -> None:
         """设置网格颜色。
@@ -162,7 +164,15 @@ class ZoomMeshGraphicsView(QGraphicsView):
         Args:
             event: 鼠标事件对象。
         """
-        super().enterEvent(event)
+        # super().enterEvent(event)
+        assert event.type() == QEvent.Enter
+
+        scene_manager = self.scene()
+        if isinstance(scene_manager, SceneManager):
+            while QApplication.overrideCursor() is not None:
+                QApplication.restoreOverrideCursor()
+
+        super(ZoomMeshGraphicsView, self).enterEvent(event)
 
     def leaveEvent(self, event: QEvent) -> None:
         """处理鼠标离开事件。
@@ -170,7 +180,14 @@ class ZoomMeshGraphicsView(QGraphicsView):
         Args:
             event: 鼠标事件对象。
         """
-        super().leaveEvent(event)
+        # super().leaveEvent(event)
+        scene_manager = self.scene()
+        if isinstance(scene_manager, SceneManager):
+            if scene_manager.is_currently_connecting:
+                scene_manager.finish_connection()
+
+        QApplication.restoreOverrideCursor()  # needed if we drag a segment out of the view
+        super(ZoomMeshGraphicsView, self).leaveEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MiddleButton:
