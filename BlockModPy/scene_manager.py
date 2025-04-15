@@ -931,7 +931,7 @@ class SceneManager(QGraphicsScene):
             item = segment_items[-1]
             if item in self.m_connector_segment_items:
                 self.m_connector_segment_items.remove(item)
-                segment_items.pop()
+            segment_items.pop()
 
         # 【高亮逻辑】
         # 添加缺失的线段图形项

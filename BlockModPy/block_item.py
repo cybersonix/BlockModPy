@@ -57,6 +57,7 @@ from qtpy.QtWidgets import (
     QStyleOptionGraphicsItem,
     QWidget,
     QStyle,
+    QGraphicsItem,
 )
 
 from .block import Block
@@ -262,7 +263,7 @@ class BlockItem(QGraphicsRectItem):
         Returns:
             处理后的值。
         """
-        if change == QGraphicsRectItem.ItemPositionChange:
+        if change == QGraphicsItem.ItemPositionChange:
             from .scene_manager import SceneManager
 
             scene_manager = self.scene()
@@ -274,11 +275,11 @@ class BlockItem(QGraphicsRectItem):
             pos = QPointF(0, 0)
 
             pos.setX(
-                int((value.x() + 0.5 * Globals.GridSpacing) / Globals.GridSpacing)
+                ((value.x() + 0.5 * Globals.GridSpacing) // Globals.GridSpacing)
                 * Globals.GridSpacing
             )
             pos.setY(
-                int((value.y() + 0.5 * Globals.GridSpacing) / Globals.GridSpacing)
+                ((value.y() + 0.5 * Globals.GridSpacing) // Globals.GridSpacing)
                 * Globals.GridSpacing
             )
 
