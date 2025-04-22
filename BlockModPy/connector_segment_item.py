@@ -264,8 +264,8 @@ class ConnectorSegmentItem(QGraphicsLineItem):
         """
         if change == QGraphicsItem.ItemPositionChange and self.m_segment_idx >= 0:
             pos_f = value
-            pos_f.setX(int(pos_f.x() / Globals.GridSpacing) * Globals.GridSpacing)
-            pos_f.setY(int(pos_f.y() / Globals.GridSpacing) * Globals.GridSpacing)
+            pos_f.setX((pos_f.x() // Globals.GridSpacing) * Globals.GridSpacing)
+            pos_f.setY((pos_f.y() // Globals.GridSpacing) * Globals.GridSpacing)
             pos = pos_f.toPoint()
 
             if self.m_last_pos != pos:
@@ -329,9 +329,11 @@ class ConnectorSegmentItem(QGraphicsLineItem):
         dy = move_dist.y()
         seg_idx = self.m_segment_idx
 
+        seg_idx -= 1
         # Update segments to the left
-        while (seg_idx := seg_idx - 1) >= 0 and (seg_idx < len(self.m_connector.m_segments)) \
-                and (not Globals.near_zero(dx) or not Globals.near_zero(dy)):
+        while seg_idx >= 0 and (seg_idx < len(self.m_connector.m_segments))\
+            and (not Globals.near_zero(dx) or not Globals.near_zero(dy)):
+
             seg = self.m_connector.m_segments[seg_idx]
             if not Globals.near_zero(dx) and seg.m_direction == Qt.Horizontal:
                 seg.m_offset += dx
@@ -339,6 +341,7 @@ class ConnectorSegmentItem(QGraphicsLineItem):
             if not Globals.near_zero(dy) and seg.m_direction == Qt.Vertical:
                 seg.m_offset += dy
                 dy = 0
+            seg_idx -= 1
 
         seg_idx = self.m_segment_idx
 
@@ -368,8 +371,10 @@ class ConnectorSegmentItem(QGraphicsLineItem):
         dy = move_dist.y()
         seg_idx = self.m_segment_idx
 
-        while (seg_idx := seg_idx + 1) < len(self.m_connector.m_segments) \
+        seg_idx += 1
+        while seg_idx >= 0 and (seg_idx < len(self.m_connector.m_segments)) \
                 and (not Globals.near_zero(dx) or not Globals.near_zero(dy)):
+
             seg = self.m_connector.m_segments[seg_idx]
             if not Globals.near_zero(dx) and seg.m_direction == Qt.Horizontal:
                 seg.m_offset -= dx
@@ -377,6 +382,7 @@ class ConnectorSegmentItem(QGraphicsLineItem):
             if not Globals.near_zero(dy) and seg.m_direction == Qt.Vertical:
                 seg.m_offset -= dy
                 dy = 0
+            seg_idx += 1
 
         # Insert new segment if needed
         if not Globals.near_zero(dx):

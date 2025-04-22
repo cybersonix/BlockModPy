@@ -176,6 +176,7 @@ class Block:
         elif direction == Socket.Direction.Bottom:
             other_point += QPointF(0, 2 * Globals.GridSpacing)
 
+
         return QLineF(start_point, other_point)
 
     def find_socket_insert_position(self, inlet_socket: bool) -> Tuple[int, int]:

@@ -267,43 +267,117 @@ class SceneManager(QGraphicsScene):
                 segment_item.update()
         self.update()
 
-    def merge_connector_segments(self, con: Connector) -> None:
-        """合并连接器的线段。
+    # def merge_connector_segments(self, con: Connector) -> None:
+    #     """合并连接器的线段。
+    #
+    #     Args:
+    #         con: 需要合并线段的连接器对象。
+    #     """
+    #     segment_items: List[ConnectorSegmentItem] = []
+    #     segment_items_dict = {}  # 临时存储索引到对象的映射
+    #
+    #     for segment_item in self.m_connector_segment_items:
+    #         if segment_item.m_connector == con:
+    #             idx = segment_item.m_segment_idx
+    #             if idx in {-1, -2}:
+    #                 continue
+    #             segment_items_dict[idx] = segment_item
+    #
+    #     # 根据 con.m_segments 的长度构建有序列表，并验证所有索引存在
+    #     expected_length = len(con.m_segments)
+    #     for idx in range(expected_length):
+    #         if idx not in segment_items_dict:
+    #             raise ValueError(f"缺少索引为{idx}的线段项")
+    #         segment_items.append(segment_items_dict[idx])
+    #
+    #     update_segments: bool = False
+    #     i = 0
+    #     while i < len(segment_items):
+    #         for i in range(len(segment_items)):
+    #             seg_item = segment_items[i]
+    #             seg = con.m_segments[i]
+    #             if i > 0 and con.m_segments[i - 1].m_direction == seg.m_direction:
+    #                 con.m_segments[i - 1].m_offset += seg.m_offset
+    #                 seg.m_offset = 0
+    #                 update_segments = True
+    #             if Globals.near_zero(seg.m_offset):
+    #                 break
+    #         if i == len(segment_items):
+    #             break
+    #
+    #         if i == 0:
+    #             con.m_segments.pop(0)
+    #             seg_item = segment_items.pop(0)
+    #             self.m_connector_segment_items.remove(seg_item)
+    #             del seg_item
+    #             for j in range(len(segment_items)):
+    #                 segment_items[j].m_segment_idx -= 1
+    #         elif i == len(segment_items) - 1:
+    #             con.m_segments.pop()
+    #             seg_item = segment_items.pop()
+    #             self.m_connector_segment_items.remove(seg_item)
+    #             del seg_item
+    #             i = 0
+    #         else:
+    #             con.m_segments.pop(i)
+    #             seg_item = segment_items.pop(i)
+    #             self.m_connector_segment_items.remove(seg_item)
+    #             del seg_item
+    #             for j in range(i, len(segment_items)):
+    #                 segment_items[j].m_segment_idx -= 1
+    #             if (
+    #                 i > 0
+    #                 and con.m_segments[i - 1].m_direction
+    #                 == con.m_segments[i].m_direction
+    #             ):
+    #                 con.m_segments[i - 1].m_offset += con.m_segments[i].m_offset
+    #                 con.m_segments.pop(i)
+    #                 seg_item = segment_items.pop(i)
+    #                 self.m_connector_segment_items.remove(seg_item)
+    #                 del seg_item
+    #                 for j in range(i, len(segment_items)):
+    #                     segment_items[j].m_segment_idx -= 1
+    #                 update_segments = True
+    #             i = 0
+    #
+    #     if update_segments:
+    #         self.update_connector_segment_items(con, None)
+    #     QApplication.restoreOverrideCursor()
 
-        Args:
-            con: 需要合并线段的连接器对象。
-        """
-        segment_items: List[ConnectorSegmentItem] = []
-        segment_items_dict = {}  # 临时存储索引到对象的映射
+    def merge_connector_segments(self, con):
+        # 收集有序的 segmentItems 列表
+        segment_items = [None] * len(con.m_segments)
 
         for segment_item in self.m_connector_segment_items:
             if segment_item.m_connector == con:
-                idx = segment_item.m_segment_idx
-                if idx in {-1, -2}:
+                if segment_item.m_segment_idx in (-1, -2):
                     continue
-                segment_items_dict[idx] = segment_item
+                assert segment_item.m_segment_idx < len(segment_items)
+                segment_items[segment_item.m_segment_idx] = segment_item
 
-        # 根据 con.m_segments 的长度构建有序列表，并验证所有索引存在
-        expected_length = len(con.m_segments)
-        for idx in range(expected_length):
-            if idx not in segment_items_dict:
-                raise ValueError(f"缺少索引为{idx}的线段项")
-            segment_items.append(segment_items_dict[idx])
-
-        update_segments: bool = False
         i = 0
+        update_segments = False
+
         while i < len(segment_items):
-            for i in range(len(segment_items)):
+            i = 0
+            while i < len(segment_items):
                 seg_item = segment_items[i]
+                assert i == seg_item.m_segment_idx
                 seg = con.m_segments[i]
+
                 if i > 0 and con.m_segments[i - 1].m_direction == seg.m_direction:
                     con.m_segments[i - 1].m_offset += seg.m_offset
                     seg.m_offset = 0
                     update_segments = True
+
                 if Globals.near_zero(seg.m_offset):
                     break
+
+                i += 1
+
+
             if i == len(segment_items):
-                break
+                break  # 没找到 zero-length segment，结束
 
             if i == 0:
                 con.m_segments.pop(0)
@@ -312,13 +386,14 @@ class SceneManager(QGraphicsScene):
                 del seg_item
                 for j in range(len(segment_items)):
                     segment_items[j].m_segment_idx -= 1
+
             elif i == len(segment_items) - 1:
                 con.m_segments.pop()
                 seg_item = segment_items.pop()
-                if seg_item is not None:
-                    self.m_connector_segment_items.remove(seg_item)
-                    del seg_item
+                self.m_connector_segment_items.remove(seg_item)
+                del seg_item
                 i = 0
+
             else:
                 con.m_segments.pop(i)
                 seg_item = segment_items.pop(i)
@@ -326,12 +401,11 @@ class SceneManager(QGraphicsScene):
                 del seg_item
                 for j in range(i, len(segment_items)):
                     segment_items[j].m_segment_idx -= 1
-                if (
-                    i > 0
-                    and con.m_segments[i - 1].m_direction
-                    == con.m_segments[i].m_direction
-                ):
-                    con.m_segments[i - 1].m_offset += con.m_segments[i].m_offset
+
+                previous_seg = con.m_segments[i - 1]
+                next_seg = con.m_segments[i]
+                if previous_seg.m_direction == next_seg.m_direction:
+                    previous_seg.m_offset += next_seg.m_offset
                     con.m_segments.pop(i)
                     seg_item = segment_items.pop(i)
                     self.m_connector_segment_items.remove(seg_item)
@@ -339,12 +413,13 @@ class SceneManager(QGraphicsScene):
                     for j in range(i, len(segment_items)):
                         segment_items[j].m_segment_idx -= 1
                     update_segments = True
+
                 i = 0
 
         if update_segments:
             self.update_connector_segment_items(con, None)
-        QApplication.restoreOverrideCursor()
 
+        QApplication.restoreOverrideCursor()
     def is_connected_socket(self, b: Block, s: Socket) -> bool:
         """判断一个插槽是否已经连接。
 
@@ -931,6 +1006,7 @@ class SceneManager(QGraphicsScene):
             item = segment_items[-1]
             if item in self.m_connector_segment_items:
                 self.m_connector_segment_items.remove(item)
+            del item
             segment_items.pop()
 
         # 【高亮逻辑】
