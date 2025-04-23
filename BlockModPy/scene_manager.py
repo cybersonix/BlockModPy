@@ -383,6 +383,8 @@ class SceneManager(QGraphicsScene):
                 con.m_segments.pop(0)
                 seg_item = segment_items.pop(0)
                 self.m_connector_segment_items.remove(seg_item)
+                # del seg_item
+                self.removeItem(seg_item)
                 del seg_item
                 for j in range(len(segment_items)):
                     segment_items[j].m_segment_idx -= 1
@@ -391,6 +393,8 @@ class SceneManager(QGraphicsScene):
                 con.m_segments.pop()
                 seg_item = segment_items.pop()
                 self.m_connector_segment_items.remove(seg_item)
+                # del seg_item
+                self.removeItem(seg_item)
                 del seg_item
                 i = 0
 
@@ -398,6 +402,8 @@ class SceneManager(QGraphicsScene):
                 con.m_segments.pop(i)
                 seg_item = segment_items.pop(i)
                 self.m_connector_segment_items.remove(seg_item)
+                # del seg_item
+                self.removeItem(seg_item)
                 del seg_item
                 for j in range(i, len(segment_items)):
                     segment_items[j].m_segment_idx -= 1
@@ -409,6 +415,8 @@ class SceneManager(QGraphicsScene):
                     con.m_segments.pop(i)
                     seg_item = segment_items.pop(i)
                     self.m_connector_segment_items.remove(seg_item)
+                    # del seg_item
+                    self.removeItem(seg_item)
                     del seg_item
                     for j in range(i, len(segment_items)):
                         segment_items[j].m_segment_idx -= 1
@@ -1006,7 +1014,8 @@ class SceneManager(QGraphicsScene):
             item = segment_items[-1]
             if item in self.m_connector_segment_items:
                 self.m_connector_segment_items.remove(item)
-            del item
+            # del item
+            self.removeItem(item)
             segment_items.pop()
 
         # 【高亮逻辑】
